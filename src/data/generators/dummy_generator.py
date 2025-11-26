@@ -4,17 +4,22 @@ Dummy data generator for ABM energy transition simulation.
 This module generates realistic synthetic data for visualization and analysis
 development, following the patterns described in the research paper.
 
+ENHANCED VERSION: Includes statistical significance metrics, confidence intervals,
+and replications for robust uncertainty quantification.
+
 Principles:
 - Functional approach: pure functions with explicit inputs/outputs
 - SOLID: Single responsibility per function
 - DRY: Reusable utilities for common operations
 """
 
-from typing import List, Tuple, Callable
-from dataclasses import dataclass
+from typing import List, Tuple, Callable, Dict
+from dataclasses import dataclass, asdict
 import numpy as np
 from pathlib import Path
 import sys
+import json
+from scipy import stats
 
 # Add project root to path for direct execution
 if __name__ == "__main__":
@@ -41,9 +46,39 @@ class GeneratorConfig:
     """Configuration for dummy data generation."""
     n_agents: int = 10000
     n_bins: int = 20
+    n_replications: int = 100  # NEW: Number of Monte Carlo replications
     noise_std: float = 0.05
     random_seed: int = 42
     output_dir: Path = Path("data/dummy")
+
+
+# =============================================================================
+# NEW: Enhanced Schemas for Statistical Metrics
+# =============================================================================
+
+@dataclass
+class HeatmapGridEnhancedSchema:
+    """Enhanced heatmap grid with statistical metrics."""
+    scenario: ScenarioType
+    trust_bin: float
+    income_bin: float
+    adoption_rate: float  # Mean across replications
+    std_dev: float  # Standard deviation
+    ci_lower: float  # 95% CI lower bound
+    ci_upper: float  # 95% CI upper bound
+    n_replications: int  # Number of Monte Carlo runs
+    n_samples: int  # Sample size per bin per replication
+
+
+@dataclass
+class HeatmapReplicationSchema:
+    """Individual replication data for uncertainty analysis."""
+    scenario: ScenarioType
+    trust_bin: float
+    income_bin: float
+    replication_id: int
+    adoption_rate: float
+    n_samples: int
 
 
 # =============================================================================
@@ -170,53 +205,144 @@ def generate_agents(
 
 
 # =============================================================================
-# Heatmap Grid Generation
+# NEW: Enhanced Heatmap Grid Generation with Replications
 # =============================================================================
 
-def generate_heatmap_grid(
+def generate_heatmap_replications(
     scenario: ScenarioType,
     n_bins: int,
+    n_replications: int,
     noise_std: float,
     random_state: np.random.RandomState
-) -> List[HeatmapGridSchema]:
+) -> List[HeatmapReplicationSchema]:
     """
-    Generate heatmap grid data (Trust × Income).
+    Generate ALL replications for heatmap grid (disaggregated data).
     
-    Creates a 2D grid of adoption rates for visualization as heatmap.
+    This creates n_replications × n_bins × n_bins data points for full
+    uncertainty quantification and statistical testing.
     
     Args:
         scenario: Policy scenario
         n_bins: Number of bins per dimension
+        n_replications: Number of Monte Carlo replications
         noise_std: Standard deviation of noise
         random_state: Random state for reproducibility
         
     Returns:
-        List of heatmap grid points (n_bins × n_bins)
+        List of all replication data points
     """
     adoption_func = get_adoption_function(scenario)
-    grid_data = []
+    replications_data = []
     
     trust_bins = np.linspace(0.025, 0.975, n_bins)
     income_bins = np.linspace(2.5, 97.5, n_bins)
     
     for trust in trust_bins:
         for income in income_bins:
-            noise = random_state.normal(0, noise_std)
-            adoption_rate = adoption_func(trust, income, noise)
-            
-            grid_data.append(HeatmapGridSchema(
-                scenario=scenario,
-                trust_bin=trust,
-                income_bin=income,
-                adoption_rate=adoption_rate,
-                n_samples=500  # Simulated sample size per bin
-            ))
+            # Generate multiple replications for this grid cell
+            for rep_id in range(n_replications):
+                noise = random_state.normal(0, noise_std)
+                adoption_rate = adoption_func(trust, income, noise)
+                
+                replications_data.append(HeatmapReplicationSchema(
+                    scenario=scenario,
+                    trust_bin=trust,
+                    income_bin=income,
+                    replication_id=rep_id,
+                    adoption_rate=adoption_rate,
+                    n_samples=500  # Simulated sample size per bin
+                ))
+    
+    return replications_data
+
+
+def aggregate_replications_to_grid(
+    replications: List[HeatmapReplicationSchema]
+) -> List[HeatmapGridEnhancedSchema]:
+    """
+    Aggregate replications into grid with statistical metrics.
+    
+    Calculates mean, std dev, and 95% confidence intervals for each grid cell.
+    
+    Args:
+        replications: List of all replication data
+        
+    Returns:
+        List of aggregated grid cells with statistics
+    """
+    # Group by (scenario, trust_bin, income_bin)
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    
+    for rep in replications:
+        key = (rep.scenario, rep.trust_bin, rep.income_bin)
+        grouped[key].append(rep.adoption_rate)
+    
+    # Calculate statistics for each group
+    grid_data = []
+    for (scenario, trust, income), rates in grouped.items():
+        rates_array = np.array(rates)
+        n_reps = len(rates_array)
+        
+        mean_rate = np.mean(rates_array)
+        std_dev = np.std(rates_array, ddof=1)  # Sample std dev
+        
+        # 95% confidence interval using t-distribution
+        ci = stats.t.interval(
+            confidence=0.95,
+            df=n_reps - 1,
+            loc=mean_rate,
+            scale=stats.sem(rates_array)
+        )
+        
+        grid_data.append(HeatmapGridEnhancedSchema(
+            scenario=scenario,
+            trust_bin=trust,
+            income_bin=income,
+            adoption_rate=mean_rate,
+            std_dev=std_dev,
+            ci_lower=ci[0],
+            ci_upper=ci[1],
+            n_replications=n_reps,
+            n_samples=500
+        ))
     
     return grid_data
 
 
+def generate_heatmap_grid(
+    scenario: ScenarioType,
+    n_bins: int,
+    n_replications: int,
+    noise_std: float,
+    random_state: np.random.RandomState
+) -> Tuple[List[HeatmapGridEnhancedSchema], List[HeatmapReplicationSchema]]:
+    """
+    Generate complete heatmap data: both aggregated and disaggregated.
+    
+    Args:
+        scenario: Policy scenario
+        n_bins: Number of bins per dimension
+        n_replications: Number of Monte Carlo replications
+        noise_std: Standard deviation of noise
+        random_state: Random state for reproducibility
+        
+    Returns:
+        Tuple of (aggregated_grid, all_replications)
+    """
+    # Generate all replications
+    replications = generate_heatmap_replications(
+        scenario, n_bins, n_replications, noise_std, random_state
+    )
+    
+    # Aggregate with statistics
+    aggregated_grid = aggregate_replications_to_grid(replications)
+    
+    return aggregated_grid, replications
+
+
 # =============================================================================
-# PRIM Analysis Data Generation
+# PRIM Analysis Data Generation (Unchanged)
 # =============================================================================
 
 def identify_prim_box(
@@ -404,6 +530,60 @@ def generate_demographic_profiles(
 
 
 # =============================================================================
+# NEW: Scale Metadata Generation
+# =============================================================================
+
+def generate_scale_metadata(config: GeneratorConfig) -> Dict:
+    """
+    Generate metadata describing the scales used in the simulation.
+    
+    Args:
+        config: Generator configuration
+        
+    Returns:
+        Dictionary with scale documentation
+    """
+    metadata = {
+        "trust": {
+            "original_range": [0.0, 1.0],
+            "unit": "normalized_trust_score",
+            "binning_method": "uniform",
+            "n_bins": config.n_bins,
+            "bin_centers": np.linspace(0.025, 0.975, config.n_bins).tolist(),
+            "interpretation": "Agent trust propensity score (0=no trust, 1=full trust)",
+            "distribution": "Beta(2, 2) - centered around 0.5 with moderate spread"
+        },
+        "income": {
+            "original_range": [0.0, 100.0],
+            "unit": "income_percentile",
+            "binning_method": "uniform",
+            "n_bins": config.n_bins,
+            "bin_centers": np.linspace(2.5, 97.5, config.n_bins).tolist(),
+            "interpretation": "Income percentile in population (0=lowest, 100=highest)",
+            "distribution": "LogNormal(μ=3.5, σ=0.6) clipped to [0, 100]"
+        },
+        "adoption_rate": {
+            "range": [0.0, 1.0],
+            "unit": "probability",
+            "interpretation": "Proportion of agents adopting green energy technology",
+            "uncertainty_quantification": {
+                "n_replications": config.n_replications,
+                "noise_std": config.noise_std,
+                "confidence_level": 0.95
+            }
+        },
+        "generation_metadata": {
+            "random_seed": config.random_seed,
+            "n_agents": config.n_agents,
+            "timestamp": "auto-generated",
+            "version": "2.0-enhanced"
+        }
+    }
+    
+    return metadata
+
+
+# =============================================================================
 # Orchestration Functions
 # =============================================================================
 
@@ -429,10 +609,11 @@ def generate_scenario_data(
     print(f"  ├─ Generating {config.n_agents} agents...")
     agents = generate_agents(scenario, config.n_agents, random_state)
     
-    # Generate heatmap grid
-    print(f"  ├─ Generating {config.n_bins}×{config.n_bins} heatmap grid...")
-    heatmap_grid = generate_heatmap_grid(
-        scenario, config.n_bins, config.noise_std, random_state
+    # Generate heatmap grid WITH replications
+    print(f"  ├─ Generating {config.n_bins}×{config.n_bins} heatmap grid "
+          f"({config.n_replications} replications)...")
+    heatmap_grid, heatmap_replications = generate_heatmap_grid(
+        scenario, config.n_bins, config.n_replications, config.noise_std, random_state
     )
     
     # Generate PRIM analysis
@@ -448,6 +629,7 @@ def generate_scenario_data(
     return {
         'agents': agents,
         'heatmap_grid': heatmap_grid,
+        'heatmap_replications': heatmap_replications,  # NEW
         'prim_boxes': prim_boxes,
         'prim_trajectory': prim_trajectory,
         'demographic_profiles': demographic_profiles
@@ -478,13 +660,14 @@ def generate_all_scenarios(config: GeneratorConfig) -> dict:
     return all_data
 
 
-def save_all_data(all_data: dict, output_dir: Path) -> None:
+def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> None:
     """
     Save all generated data to CSV files.
     
     Args:
         all_data: Dictionary with all scenario data
         output_dir: Directory to save CSV files
+        config: Generator configuration (for metadata)
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -492,23 +675,83 @@ def save_all_data(all_data: dict, output_dir: Path) -> None:
     
     # Aggregate data across scenarios
     all_heatmaps = []
+    all_heatmap_reps = []  # NEW
     all_prim_boxes = []
     all_trajectories = []
     all_profiles = []
     
     for scenario_name, data in all_data.items():
         all_heatmaps.extend(data['heatmap_grid'])
+        all_heatmap_reps.extend(data['heatmap_replications'])  # NEW
         all_prim_boxes.extend(data['prim_boxes'])
         all_trajectories.extend(data['prim_trajectory'])
         all_profiles.extend(data['demographic_profiles'])
     
-    # Save aggregated files
-    schemas_to_csv(all_heatmaps, output_dir / "heatmap_grid.csv")
+    # Save aggregated heatmap (with statistics)
+    print("  ├─ Saving heatmap_grid.csv (with CI)...")
+    _save_enhanced_heatmap(all_heatmaps, output_dir / "heatmap_grid.csv")
+    
+    # NEW: Save disaggregated replications
+    print("  ├─ Saving heatmap_replications.csv (all runs)...")
+    _save_replications(all_heatmap_reps, output_dir / "heatmap_replications.csv")
+    
+    # Save other files (unchanged)
     schemas_to_csv(all_prim_boxes, output_dir / "prim_boxes.csv")
     schemas_to_csv(all_trajectories, output_dir / "prim_trajectory.csv")
     schemas_to_csv(all_profiles, output_dir / "demographic_profiles.csv")
     
+    # NEW: Save scale metadata
+    print("  └─ Saving scale_metadata.json...")
+    metadata = generate_scale_metadata(config)
+    with open(output_dir / "scale_metadata.json", 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
     print("✅ All data saved successfully!")
+
+
+def _save_enhanced_heatmap(data: List[HeatmapGridEnhancedSchema], filepath: Path):
+    """Save enhanced heatmap grid with statistics."""
+    import csv
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'scenario', 'trust_bin', 'income_bin', 'adoption_rate',
+            'std_dev', 'ci_lower', 'ci_upper', 'n_replications', 'n_samples'
+        ])
+        for item in data:
+            writer.writerow([
+                item.scenario.value,
+                item.trust_bin,
+                item.income_bin,
+                item.adoption_rate,
+                item.std_dev,
+                item.ci_lower,
+                item.ci_upper,
+                item.n_replications,
+                item.n_samples
+            ])
+
+
+def _save_replications(data: List[HeatmapReplicationSchema], filepath: Path):
+    """Save all individual replications for uncertainty analysis."""
+    import csv
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'scenario', 'trust_bin', 'income_bin', 'replication_id',
+            'adoption_rate', 'n_samples'
+        ])
+        for item in data:
+            writer.writerow([
+                item.scenario.value,
+                item.trust_bin,
+                item.income_bin,
+                item.replication_id,
+                item.adoption_rate,
+                item.n_samples
+            ])
 
 
 # =============================================================================
@@ -520,11 +763,13 @@ def main():
     config = GeneratorConfig()
     
     print("=" * 70)
-    print("🚀 ECOGrid Dummy Data Generator")
+    print("🚀 ECOGrid Dummy Data Generator (Enhanced v2.0)")
     print("=" * 70)
     print(f"Configuration:")
     print(f"  • Agents per scenario: {config.n_agents:,}")
     print(f"  • Heatmap bins: {config.n_bins}×{config.n_bins}")
+    print(f"  • Monte Carlo replications: {config.n_replications}")
+    print(f"  • Noise std dev: {config.noise_std}")
     print(f"  • Random seed: {config.random_seed}")
     print(f"  • Output directory: {config.output_dir}")
     
@@ -532,15 +777,22 @@ def main():
     all_data = generate_all_scenarios(config)
     
     # Save to CSV files
-    save_all_data(all_data, config.output_dir)
+    save_all_data(all_data, config.output_dir, config)
     
     print("\n" + "=" * 70)
     print("✅ Data generation complete!")
     print("=" * 70)
-    print("\n📊 Ready for visualization:")
-    print("  • Figure 1 (Heatmaps): Use heatmap_grid.csv + prim_boxes.csv")
-    print("  • Figure 2 (Trajectory): Use prim_trajectory.csv")
-    print("  • Table III (Demographics): Use demographic_profiles.csv")
+    print("\n📊 Generated files:")
+    print("  • heatmap_grid.csv (with std_dev, CI)")
+    print("  • heatmap_replications.csv (all 100 runs)")
+    print("  • prim_boxes.csv")
+    print("  • prim_trajectory.csv")
+    print("  • demographic_profiles.csv")
+    print("  • scale_metadata.json (NEW)")
+    print("\n📈 Ready for enhanced visualization with:")
+    print("  • Statistical significance testing")
+    print("  • Confidence interval error bars")
+    print("  • Full uncertainty quantification")
 
 
 if __name__ == "__main__":
