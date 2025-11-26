@@ -14,6 +14,12 @@ from typing import List, Tuple, Callable
 from dataclasses import dataclass
 import numpy as np
 from pathlib import Path
+import sys
+
+# Add project root to path for direct execution
+if __name__ == "__main__":
+    project_root = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
 
 from src.data.schemas import (
     ScenarioType,
