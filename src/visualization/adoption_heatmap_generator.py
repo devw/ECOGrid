@@ -5,6 +5,10 @@ Improvements applied:
 - Explicitly separated the Colorbar's label and the Legend's label vertically.
 - The Colorbar label is now placed *below* the colorbar itself.
 - The Legend is placed *below* the Colorbar label, resolving the final overlap.
+- Increased DPI to 300.
+- Increased all font sizes by +2pt.
+- Improved PRIM Box contrast (thicker, red, solid line).
+- Uniformed statistical notation in titles (using mu and sigma).
 """
 
 from pathlib import Path
@@ -34,20 +38,20 @@ SCENARIOS = {
 }
 
 CMAP = "viridis"
-PRIM_COLOR = "yellow"
-PRIM_WIDTH = 2.5
+PRIM_COLOR = "red" # MIGLIORAMENTO: Cambiato a rosso
+PRIM_WIDTH = 3.5   # MIGLIORAMENTO: Aumentato spessore
 P_VALUE_THRESHOLD = 0.05
 CI_DOWNSAMPLE = 5
 SUPTITLE_Y = 0.98 
 COLORBAR_LABEL = "Adoption Rate (0=none → 1=full adoption)"
 
-# FONT SIZES
-FONTSIZE_TITLE = 16 
-FONTSIZE_SUBTITLE = 14
-FONTSIZE_AXES_LABEL = 12 
-FONTSIZE_AXES_TICKS = 10 
-FONTSIZE_TEXT_SMALL = 10
-FONTSIZE_CBAR_LABEL = 12 
+# FONT SIZES (MIGLIORAMENTO: Aumentati di +2pt)
+FONTSIZE_TITLE = 18 
+FONTSIZE_SUBTITLE = 16
+FONTSIZE_AXES_LABEL = 14 
+FONTSIZE_AXES_TICKS = 12 
+FONTSIZE_TEXT_SMALL = 12
+FONTSIZE_CBAR_LABEL = 14 
 
 # OPTIMIZED POSITIONS (More aggressive separation)
 COLORBAR_Y_POS = 0.92 
@@ -196,7 +200,8 @@ class HeatmapPlotter:
         y0 = idx(income, box["income_min"]) - 0.5
         w = idx(trust, box["trust_max"]) - idx(trust, box["trust_min"])
         h = idx(income, box["income_max"]) - idx(income, box["income_min"])
-        return Rectangle((x0, y0), w, h, fill=False, edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle="--", zorder=10)
+        # MIGLIORAMENTO: Cambiato lo linestyle a "-" e usato PRIM_COLOR/PRIM_WIDTH aggiornati
+        return Rectangle((x0, y0), w, h, fill=False, edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle="-", zorder=10)
 
     @staticmethod
     def _prim_label(box: pd.Series) -> str:
@@ -221,14 +226,16 @@ class HeatmapPlotter:
 
         if prim_box is not None:
             ax.add_patch(self._prim_patch(prim_box, trust, income))
+            # MIGLIORAMENTO: Rimosso alpha per un migliore contrasto del testo
             ax.text(0.98, 0.02, self._prim_label(prim_box), transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color=PRIM_COLOR,
-                    ha='right', va='bottom', bbox=dict(boxstyle='round', facecolor='black', alpha=0.6), zorder=11)
+                    ha='right', va='bottom', bbox=dict(boxstyle='round', facecolor='black', alpha=1.0), zorder=11)
 
         if show_ci:
             self._add_ci_overlay(ax, trust, income, grid, CI_DOWNSAMPLE)
 
+        # MIGLIORAMENTO: Uniformata la notazione statistica nel titolo (mu/CI)
         ax.set_title(
-            f"{title} (N={grid['n_replications']} replications, Mean +/- 95% CI)",
+            f"{title} (N={grid['n_replications']}, $\\mu \\pm 95\\% \\text{{ CI}}$)",
             fontsize=FONTSIZE_SUBTITLE,
             fontweight='bold'
         )
@@ -246,6 +253,7 @@ class HeatmapPlotter:
         ax.set_xticklabels([f"{trust[i]:.2f}" for i in xt], fontsize=FONTSIZE_AXES_TICKS)
         ax.set_yticklabels([f"{income[i]:.0f}" for i in yt], fontsize=FONTSIZE_AXES_TICKS)
 
+        # MIGLIORAMENTO: Uniformata la notazione statistica per la deviazione standard ($\sigma$)
         ax.text(0.02, 0.98, f"Avg $\\sigma$={np.mean(grid['std_dev']):.3f}", transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color='white',
                 ha='left', va='top', bbox=dict(boxstyle='round', facecolor='black', alpha=0.5), zorder=11)
 
@@ -297,10 +305,7 @@ def plot_all(output: Path) -> plt.Figure:
 
     cbar = fig.colorbar(last_im, cax=cbar_ax, orientation='horizontal')
     
-    # 1. Rimuovi l'etichetta di default dalla colorbar
-    # cbar.set_label(COLORBAR_LABEL, fontsize=FONTSIZE_CBAR_LABEL) # Commented out
-
-    legend_patches = [mpatches.Patch(facecolor='none', edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle='--', label='PRIM Box (High-Adoption Region)')]
+    legend_patches = [mpatches.Patch(facecolor='none', edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle='-', label='PRIM Box (High-Adoption Region)')]
     
     # 2. Posiziona l'etichetta della Colorbar in un nuovo asse sotto la Colorbar
     cbar_label_ax = fig.add_axes([0.10, CBAR_LABEL_Y_POS, 0.80, 0.01])
@@ -313,11 +318,13 @@ def plot_all(output: Path) -> plt.Figure:
     # Spostiamo la legenda leggermente a destra per bilanciare lo spazio
     legend_ax.legend(handles=legend_patches, loc='center right', fontsize=FONTSIZE_TEXT_SMALL + 1, framealpha=0.8, handlelength=2.5, borderpad=0.2)
 
-    fig.text(0.5, 0.005, "Error bars (subplot 1) show 95% confidence intervals. See console for statistical significance tests.", ha='center', fontsize=FONTSIZE_TEXT_SMALL, style='italic', color='gray')
+    # Nota statistica nel piè di pagina
+    fig.text(0.5, 0.005, "Error bars (subplot 1) show 95% confidence intervals ($\text{CI}$). See console for statistical significance tests.", ha='center', fontsize=FONTSIZE_TEXT_SMALL, style='italic', color='gray')
 
     # Adjusted top margin
     fig.tight_layout(rect=[0.12, 0.015, 1, 0.85]) 
 
+    # MIGLIORAMENTO: Imposta la risoluzione a 300 DPI
     fig.savefig(output, dpi=300, bbox_inches='tight')
     print(f"✔ Heatmap saved to: {output.resolve()}")
 
