@@ -68,13 +68,20 @@ This project relies on the following key tools and frameworks:
 
 ## 📄 License & Contact
 
-[Specify your license here]
+This research project is licensed under the **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)**.
+
+**Policy Summary:**
+* You are free to **share** (copy and redistribute) the material in any medium or format.
+* The material **cannot be used for commercial purposes**.
+* You may **not distribute modified material**.
+
+For any permissions regarding **commercial use**, **modification**, or general inquiries, please contact the project owner:
 
 **Authors:**
-[Your name(s) here]
+G. Antonio Pierro
 
 **Contact:**
-[Email or repository link]
+antonio.pierro@gmail.com
 
 -----
 
