@@ -30,8 +30,8 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
         ax.errorbar(
             subset["coverage_mean"], subset["density_mean"], yerr=y_err,
             label=f"{scenario} Trajectory (Mean ± 95% CI)", color=color,
-            linewidth=2, marker='o', markersize=4, capsize=3, 
-            elinewidth=0.8, zorder=2, errorevery=2
+            linewidth=2, marker='o', markersize=4, capsize=6, 
+            elinewidth=1.5, zorder=2
         )
 
         # Mark selected boxes with stars
