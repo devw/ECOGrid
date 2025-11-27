@@ -4,7 +4,7 @@ CLI script to generate dummy data for ECOGrid simulation.
 
 Usage:
     python src/scripts/generate_dummy_data.py
-    python src/scripts/generate_dummy_data.py --n-agents 5000 --n-bins 15
+    python src/scripts/generate_dummy_data.py --n-agents 5000 --n-bins 15 --n-replications 100
     python src/scripts/generate_dummy_data.py --seed 123 --output data/custom
 """
 
@@ -44,6 +44,13 @@ def parse_arguments() -> argparse.Namespace:
     )
     
     parser.add_argument(
+        '--n-replications',
+        type=int,
+        default=100,
+        help='Number of Monte Carlo replications for uncertainty quantification'
+    )
+    
+    parser.add_argument(
         '--noise-std',
         type=float,
         default=0.05,
@@ -75,17 +82,19 @@ def main():
     config = GeneratorConfig(
         n_agents=args.n_agents,
         n_bins=args.n_bins,
+        n_replications=args.n_replications,
         noise_std=args.noise_std,
         random_seed=args.seed,
         output_dir=args.output
     )
     
     print("=" * 70)
-    print("🚀 ECOGrid Dummy Data Generator")
+    print("🚀 ECOGrid Dummy Data Generator (Enhanced v2.0)")
     print("=" * 70)
     print(f"Configuration:")
     print(f"  • Agents per scenario: {config.n_agents:,}")
     print(f"  • Heatmap bins: {config.n_bins}×{config.n_bins}")
+    print(f"  • Monte Carlo replications: {config.n_replications}")
     print(f"  • Noise std: {config.noise_std}")
     print(f"  • Random seed: {config.random_seed}")
     print(f"  • Output directory: {config.output_dir}")
@@ -95,23 +104,27 @@ def main():
         all_data = generate_all_scenarios(config)
         
         # Save to CSV files
-        save_all_data(all_data, config.output_dir)
+        save_all_data(all_data, config.output_dir, config)
         
         print("\n" + "=" * 70)
         print("✅ Data generation complete!")
         print("=" * 70)
         print("\n📊 Generated files:")
-        print(f"  • {config.output_dir / 'heatmap_grid.csv'}")
+        print(f"  • {config.output_dir / 'heatmap_grid.csv'} (with std_dev, CI)")
+        print(f"  • {config.output_dir / 'heatmap_replications.csv'} (all {config.n_replications} runs)")
         print(f"  • {config.output_dir / 'prim_boxes.csv'}")
         print(f"  • {config.output_dir / 'prim_trajectory.csv'}")
         print(f"  • {config.output_dir / 'demographic_profiles.csv'}")
-        print("\n📈 Ready for visualization:")
-        print("  • Figure 1 (Heatmaps): Use heatmap_grid.csv + prim_boxes.csv")
-        print("  • Figure 2 (Trajectory): Use prim_trajectory.csv")
-        print("  • Table III (Demographics): Use demographic_profiles.csv")
+        print(f"  • {config.output_dir / 'scale_metadata.json'} (scale documentation)")
+        print("\n📈 Ready for enhanced visualization:")
+        print("  • Figure 1: Statistical heatmaps with confidence intervals")
+        print("  • Statistical significance testing between scenarios")
+        print("  • Full uncertainty quantification")
         
     except Exception as e:
         print(f"\n❌ Error during data generation: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

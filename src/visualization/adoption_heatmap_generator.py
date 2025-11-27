@@ -1,154 +1,131 @@
 """
-Adoption Heatmap Generator (Refactored)
-
-Generates heatmaps of adoption rate vs. trust & income for multiple scenarios.
-Highlights PRIM boxes where relevant.
-
-Output:
-    /tmp/adoption_heatmaps_rowlayout.png
+Main controller script for the Adoption Heatmap Generator.
+Orchestrates data loading, processing, statistical analysis, and plotting.
 """
 
 from pathlib import Path
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as Rectangle
+import matplotlib.patches as mpatches
 
-DATA_DIR = Path("data/dummy")
-HEATMAP_FILE = "heatmap_grid.csv"
-PRIM_BOXES_FILE = "prim_boxes.csv"
+# Import constants (paths, styles, colors)
+from ._config.settings import *
 
-SCENARIOS = {
-    "NI": "No Incentive",
-    "SI": "Services Incentive",
-    "EI": "Economic Incentive"
-}
+# Import functional modules
+from ._data_io.csv_reader import load_csv, load_metadata
+from ._processors.data_utils import scenario_grid
+from ._processors.stats_utils import compute_pairwise_significance
+from .plotting import HeatmapPlotter
 
-CMAP = "viridis"
-PRIM_COLOR = "yellow"
-PRIM_WIDTH = 2
+# --- CONTROLLER ---
 
+def plot_all(output: Path) -> plt.Figure:
+    """Orchestrates the entire heatmap generation process: load, analyze, and plot."""
+    
+    # 1. DATA LOADING
+    try:
+        df = load_csv(HEATMAP_FILE)
+        prim_df = load_csv(PRIM_BOXES_FILE)
+        meta = load_metadata()
+    except FileNotFoundError as e:
+        print(f"Data loading error: {e}")
+        return
 
-# ------------------------------------------------------------
-# Utilities
-# ------------------------------------------------------------
-
-def load_csv(name: str) -> pd.DataFrame:
-    path = DATA_DIR / name
-    if not path.exists():
-        raise FileNotFoundError(path)
-    return pd.read_csv(path)
-
-
-def scenario_grid(df: pd.DataFrame, s: str):
-    data = df[df["scenario"] == s]
-    trust = sorted(data["trust_bin"].unique())
-    income = sorted(data["income_bin"].unique())
-
-    grid = data.pivot_table(
-        index="income_bin",
-        columns="trust_bin",
-        values="adoption_rate",
-        fill_value=0
-    ).reindex(index=income, columns=trust).values
-
-    return np.array(trust), np.array(income), grid
-
-
-def prim_box_patch(box, trust, income):
-    """Create a rectangle highlighting a PRIM box."""
-    def idx(arr, val): return np.searchsorted(arr, val)
-
-    x0 = idx(trust, box["trust_min"]) - 0.5
-    y0 = idx(income, box["income_min"]) - 0.5
-    w = idx(trust, box["trust_max"]) - idx(trust, box["trust_min"])
-    h = idx(income, box["income_max"]) - idx(income, box["income_min"])
-
-    return Rectangle.Rectangle(
-        (x0, y0), w, h,
-        fill=False, edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, zorder=10
-    )
-
-
-# ------------------------------------------------------------
-# Plotting
-# ------------------------------------------------------------
-
-def plot_heatmap(ax, trust, income, grid, title, prim):
-    """Plot a single scenario heatmap."""
-    im = ax.imshow(
-        grid, origin="lower", aspect="auto", cmap=CMAP,
-        vmin=0, vmax=1,
-        extent=[-0.5, len(trust)-0.5, -0.5, len(income)-0.5]
-    )
-
-    if prim is not None:
-        ax.add_patch(prim_box_patch(prim, trust, income))
-
-    ax.set_title(title, fontweight="bold")
-    ax.set_xlabel("Trust")
-    ax.set_ylabel("Income")
-
-    # Ticks
-    xt = np.linspace(0, len(trust)-1, min(5, len(trust))).astype(int)
-    yt = np.linspace(0, len(income)-1, min(5, len(income))).astype(int)
-    ax.set_xticks(xt)
-    ax.set_xticklabels([f"{trust[i]:.2f}" for i in xt])
-    ax.set_yticks(yt)
-    ax.set_yticklabels([f"{income[i]:.0f}" for i in yt])
-
-    return im
-
-
-def plot_all(output: Path):
-    heatmap = load_csv(HEATMAP_FILE)
-    prim_boxes = load_csv(PRIM_BOXES_FILE)
-
-    # Preload data for scenarios
-    data = {
-        s: {
-            "bins": scenario_grid(heatmap, s),
-            "prim": prim_boxes[prim_boxes["scenario"] == s].iloc[0]
-                   if not prim_boxes[prim_boxes["scenario"] == s].empty else None
-        }
-        for s in SCENARIOS
-    }
-
-    fig, axes = plt.subplots(len(SCENARIOS), 1, figsize=(7, 4 * len(SCENARIOS)))
-    axes = np.atleast_1d(axes)
-
-    # First scenario → for colorbar
-    first = next(iter(SCENARIOS))
-    trust, income, grid = data[first]["bins"]
-    im = plot_heatmap(axes[0], trust, income, grid, SCENARIOS[first], data[first]["prim"])
-
-    # Rest
-    for ax, s in zip(axes[1:], list(SCENARIOS)[1:]):
-        trust, income, grid = data[s]["bins"]
-        plot_heatmap(ax, trust, income, grid, SCENARIOS[s], data[s]["prim"])
-
-    fig.suptitle("Adoption Rate Across Trust and Income", fontweight="bold", y=0.97)
-
-    # Colorbar above plots
-    cax = fig.add_axes([0.15, 0.93, 0.7, 0.02])
-    fig.colorbar(im, cax=cax, orientation="horizontal", label="Adoption Rate")
-
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
+    # 2. STATISTICAL ANALYSIS & CACHING
     output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output, dpi=300, bbox_inches="tight")
+    sig_path = output.parent / "statistical_significance_results.csv"
+    
+    if sig_path.exists():
+        sig = pd.read_csv(sig_path)
+    else:
+        sig = compute_pairwise_significance(df)
+        sig.to_csv(sig_path, index=False)
+
+    # 3. DATA PROCESSING & GRID PREPARATION
+    grids = {}
+    for s in SCENARIOS:
+        grids[s] = scenario_grid(df, s)
+        # Retrieve PRIM box data for the current scenario
+        p = prim_df[prim_df["scenario"] == s]
+        grids[s]['prim'] = p.iloc[0] if not p.empty else None
+
+    # 4. PLOTTING SETUP (Figure, Suptitle, Colorbar Axis)
+    fig = plt.figure(figsize=(10, 16)) 
+    plotter = HeatmapPlotter()
+
+    n_reps = grids[next(iter(SCENARIOS))]['n_replications']
+    
+    suptitle_text = f"Adoption Rate Heatmaps: Trust vs Income Statistical Analysis\n(N={n_reps} Monte Carlo replications)"
+    fig.suptitle(suptitle_text, y=SUPTITLE_Y, fontsize=FONTSIZE_TITLE, fontweight='bold')
+
+    # Define axis for the horizontal colorbar
+    cbar_ax = fig.add_axes([0.10, COLORBAR_Y_POS, 0.80, 0.01]) 
+    fig.subplots_adjust(hspace=0.3) 
+
+    # 5. PLOT GENERATION LOOP
+    last_im = None
+    for i, (code, title) in enumerate(SCENARIOS.items(), 1):
+        ax = fig.add_subplot(len(SCENARIOS), 1, i)
+        # Show CI only for the first subplot
+        last_im = plotter.plot_single(
+            ax, 
+            grids[code], 
+            title, 
+            grids[code]['prim'], 
+            show_ci=(i == 1), 
+            meta=meta
+        )
+
+    # 6. POST-PLOTTING & ANNOTATIONS
+    
+    # Add colorbar
+    fig.colorbar(last_im, cax=cbar_ax, orientation='horizontal')
+    
+    # Create patch for the legend
+    legend_patches = [
+        mpatches.Patch(
+            facecolor='none', 
+            edgecolor=PRIM_COLOR, 
+            linewidth=PRIM_WIDTH, 
+            linestyle='-', 
+            label='PRIM Box (High-Adoption Region)'
+        )
+    ]
+    
+    # Position the Colorbar label
+    cbar_label_ax = fig.add_axes([0.10, CBAR_LABEL_Y_POS, 0.80, 0.01])
+    cbar_label_ax.axis('off')
+    cbar_label_ax.text(0.5, 0.5, COLORBAR_LABEL, ha='center', va='center', fontsize=FONTSIZE_CBAR_LABEL)
+    
+    # Position the Legend
+    legend_ax = fig.add_axes([0.10, LEGEND_Y_POS, 0.80, 0.01])
+    legend_ax.axis('off') 
+    legend_ax.legend(
+        handles=legend_patches, 
+        loc='center right', 
+        fontsize=FONTSIZE_TEXT_SMALL + 1, 
+        framealpha=0.8, 
+        handlelength=2.5, 
+        borderpad=0.2
+    )
+
+    # Add statistical note in the footer
+    fig.text(
+        0.5, 
+        0.005, 
+        "Error bars (subplot 1) show 95% confidence intervals ($\text{CI}$). See console for statistical significance tests.", 
+        ha='center', 
+        fontsize=FONTSIZE_TEXT_SMALL, 
+        style='italic', 
+        color='gray'
+    )
+
+    # Save figure
+    fig.tight_layout(rect=[0.12, 0.015, 1, 0.85]) 
+    fig.savefig(output, dpi=300, bbox_inches='tight')
+    print(f"✔ Heatmap saved to: {output.resolve()}")
 
     return fig
 
 
-# ------------------------------------------------------------
-# Entry point
-# ------------------------------------------------------------
-
-def main():
-    output = Path("/tmp/adoption_heatmaps_rowlayout.png")
-    plot_all(output)
-    print(output)
-
-
 if __name__ == "__main__":
-    main()
+    plot_all(OUTPUT_PATH)
