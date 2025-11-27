@@ -45,7 +45,7 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
         # Annotate key points
         for _, row in selected.iterrows():
             ax.annotate(
-                f"Iter {int(row['iteration'])}", 
+                f"Iteration {int(row['iteration'])}",
                 (row["coverage_mean"], row["density_mean"]),
                 textcoords="offset points", xytext=(5, 15), ha='center',
                 fontsize=12, color=color,
