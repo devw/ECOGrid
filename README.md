@@ -79,9 +79,3 @@ This project relies on the following key tools and frameworks:
 -----
 
 ⭐ If you find this project useful, please star it on GitHub\!
-
-<br>
-
-The links are now fixed to use correct **relative paths** (e.g., `docs/getting_started.md` and `CONTRIBUTING.md`).
-
-Would you like me to draft the content for the new **`CONTRIBUTING.md`** file next, using the text that was moved from the original README?
