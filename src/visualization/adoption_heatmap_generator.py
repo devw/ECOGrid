@@ -1,126 +1,35 @@
 """
-Adoption Heatmap Generator — Final Vertical Text Separation
-
-Improvements applied:
-- Explicitly separated the Colorbar's label and the Legend's label vertically.
-- The Colorbar label is now placed *below* the colorbar itself.
-- The Legend is placed *below* the Colorbar label, resolving the final overlap.
-- Increased DPI to 300.
-- Increased all font sizes by +2pt.
-- Improved PRIM Box contrast (thicker, red, solid line).
-- Uniformed statistical notation in titles (using mu and sigma).
+Main controller script for the Adoption Heatmap Generator.
+This script orchestrates data loading, processing, statistical analysis, 
+and plotting, utilizing modularized utility functions.
 """
 
 from pathlib import Path
-import json
-from itertools import combinations
 
-import numpy as np
-import pandas as pd
+# External Libraries needed for control and plotting
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle # Needed for the HeatmapPlotter class definition
+
+# Import constants from the centralized config
+from ._config.settings import *
+
+# Import I/O functions from the centralized data module
+from ._data_io.csv_reader import load_csv, load_metadata
+
+# --- LOGIC SECTIONS (To be moved in next steps) ---
+
+# Note: The following sections (GRID/PIVOT HELPERS, STATISTICAL ANALYSIS, PLOTTING CLASS)
+# are left here temporarily but should be moved to:
+# - _processors/data_utils.py
+# - _processors/stats_utils.py
+# - plotting.py
+# as discussed in the refactoring plan.
+
+from itertools import combinations
+import numpy as np
+import pandas as pd
 from scipy import stats
-
-# --- CONFIGURATION ---
-# Dummy paths for execution context
-DATA_DIR = Path("data/dummy")
-HEATMAP_FILE = "heatmap_grid.csv"
-PRIM_BOXES_FILE = "prim_boxes.csv"
-METADATA_FILE = "scale_metadata.json"
-# Updated output path to reflect final version
-OUTPUT_PATH = Path("/tmp/adoption_heatmaps_final_final_optimized.png") 
-
-SCENARIOS = {
-    "NI": "No Incentive",
-    "SI": "Services Incentive",
-    "EI": "Economic Incentive",
-}
-
-CMAP = "viridis"
-PRIM_COLOR = "red" # MIGLIORAMENTO: Cambiato a rosso
-PRIM_WIDTH = 3.5   # MIGLIORAMENTO: Aumentato spessore
-P_VALUE_THRESHOLD = 0.05
-CI_DOWNSAMPLE = 5
-SUPTITLE_Y = 0.98 
-COLORBAR_LABEL = "Adoption Rate (0=none → 1=full adoption)"
-
-# FONT SIZES (MIGLIORAMENTO: Aumentati di +2pt)
-FONTSIZE_TITLE = 18 
-FONTSIZE_SUBTITLE = 16
-FONTSIZE_AXES_LABEL = 14 
-FONTSIZE_AXES_TICKS = 12 
-FONTSIZE_TEXT_SMALL = 12
-FONTSIZE_CBAR_LABEL = 14 
-
-# OPTIMIZED POSITIONS (More aggressive separation)
-COLORBAR_Y_POS = 0.92 
-CBAR_LABEL_Y_POS = 0.89  # New position for the Colorbar's label
-LEGEND_Y_POS = 0.86     # New position for the Legend (below CBAR_LABEL)
-
-# --- IO UTILITIES ---
-
-def load_csv(name: str) -> pd.DataFrame:
-    path = DATA_DIR / name
-    if not path.exists():
-        # Creating dummy data if files are not found
-        if name == HEATMAP_FILE:
-            num_bins = 10
-            np.random.seed(42)
-            trust_bins = np.linspace(0.03, 0.97, num_bins)
-            income_bins = np.linspace(2, 98, num_bins)
-            data = []
-            for scenario in ['NI', 'SI', 'EI']:
-                for t_bin in trust_bins:
-                    for i_bin in income_bins:
-                        base_rate = (t_bin + i_bin / 100) / 2
-                        if scenario == 'SI': base_rate += 0.1 * (t_bin > 0.6)
-                        elif scenario == 'EI': base_rate += 0.1 * (i_bin > 60)
-                        adoption = np.clip(base_rate + np.random.randn() * 0.05, 0, 1)
-                        std_dev = np.random.rand() * 0.04 + 0.01
-                        data.append({
-                            'scenario': scenario,
-                            'trust_bin': t_bin,
-                            'income_bin': i_bin,
-                            'adoption_rate': adoption,
-                            'std_dev': std_dev,
-                            'ci_lower': np.clip(adoption - 1.96 * std_dev / np.sqrt(100), 0, 1),
-                            'ci_upper': np.clip(adoption + 1.96 * std_dev / np.sqrt(100), 0, 1),
-                            'n_replications': 1000,
-                        })
-            return pd.DataFrame(data)
-        elif name == PRIM_BOXES_FILE:
-            return pd.DataFrame({
-                'scenario': ['NI', 'SI', 'EI'],
-                'trust_min': [0.03, 0.5, 0.6],
-                'trust_max': [0.97, 0.97, 0.97],
-                'income_min': [2, 2, 60],
-                'income_max': [98, 98, 98],
-                'coverage': [1.0, 0.5, 0.3],
-                'density': [0.5, 0.9, 0.8],
-                'lift': [1.0, 1.8, 1.6],
-            })
-        elif name == METADATA_FILE:
-            return {
-                "trust": {"interpretation": "Agent trust propensity score (0=no trust, 1=full trust)"},
-                "income": {"interpretation": "Income percentile in population (0=lowest, 100=highest)"}
-            }
-        raise FileNotFoundError(f"File not found: {path}")
-    return pd.read_csv(path)
-
-
-def load_metadata() -> dict:
-    path = DATA_DIR / METADATA_FILE
-    if not path.exists():
-        return {
-            "trust": {"interpretation": "Agent trust propensity score (0=no trust, 1=full trust)"},
-            "income": {"interpretation": "Income percentile in population (0=lowest, 100=highest)"}
-        }
-    try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        return {}
 
 # --- GRID / PIVOT HELPERS ---
 
@@ -200,7 +109,7 @@ class HeatmapPlotter:
         y0 = idx(income, box["income_min"]) - 0.5
         w = idx(trust, box["trust_max"]) - idx(trust, box["trust_min"])
         h = idx(income, box["income_max"]) - idx(income, box["income_min"])
-        # MIGLIORAMENTO: Cambiato lo linestyle a "-" e usato PRIM_COLOR/PRIM_WIDTH aggiornati
+        # Improvement: Changed linestyle to "-" and used updated PRIM_COLOR/PRIM_WIDTH
         return Rectangle((x0, y0), w, h, fill=False, edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle="-", zorder=10)
 
     @staticmethod
@@ -226,14 +135,14 @@ class HeatmapPlotter:
 
         if prim_box is not None:
             ax.add_patch(self._prim_patch(prim_box, trust, income))
-            # MIGLIORAMENTO: Rimosso alpha per un migliore contrasto del testo
+            # Improvement: Removed alpha for better text contrast
             ax.text(0.98, 0.02, self._prim_label(prim_box), transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color=PRIM_COLOR,
                     ha='right', va='bottom', bbox=dict(boxstyle='round', facecolor='black', alpha=1.0), zorder=11)
 
         if show_ci:
             self._add_ci_overlay(ax, trust, income, grid, CI_DOWNSAMPLE)
 
-        # MIGLIORAMENTO: Uniformata la notazione statistica nel titolo (mu/CI)
+        # Improvement: Uniformed statistical notation in the title (mu/CI)
         ax.set_title(
             f"{title} (N={grid['n_replications']}, $\\mu \\pm 95\\% \\text{{ CI}}$)",
             fontsize=FONTSIZE_SUBTITLE,
@@ -253,7 +162,7 @@ class HeatmapPlotter:
         ax.set_xticklabels([f"{trust[i]:.2f}" for i in xt], fontsize=FONTSIZE_AXES_TICKS)
         ax.set_yticklabels([f"{income[i]:.0f}" for i in yt], fontsize=FONTSIZE_AXES_TICKS)
 
-        # MIGLIORAMENTO: Uniformata la notazione statistica per la deviazione standard ($\sigma$)
+        # Improvement: Uniformed statistical notation for standard deviation ($\sigma$)
         ax.text(0.02, 0.98, f"Avg $\\sigma$={np.mean(grid['std_dev']):.3f}", transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color='white',
                 ha='left', va='top', bbox=dict(boxstyle='round', facecolor='black', alpha=0.5), zorder=11)
 
@@ -262,7 +171,9 @@ class HeatmapPlotter:
 # --- CONTROLLER ---
 
 def plot_all(output: Path) -> plt.Figure:
+    """Orchestrates the entire heatmap generation process."""
     try:
+        # Data loading now uses the imported functions from _data_io/csv_reader.py
         df = load_csv(HEATMAP_FILE)
         prim_df = load_csv(PRIM_BOXES_FILE)
         meta = load_metadata()
@@ -284,7 +195,7 @@ def plot_all(output: Path) -> plt.Figure:
         p = prim_df[prim_df["scenario"] == s]
         grids[s]['prim'] = p.iloc[0] if not p.empty else None
 
-    # INCREASED FIGURE SIZE FOR ROBUST SPACING
+    # Increased figure size for robust spacing
     fig = plt.figure(figsize=(10, 16)) 
     plotter = HeatmapPlotter()
 
@@ -307,24 +218,24 @@ def plot_all(output: Path) -> plt.Figure:
     
     legend_patches = [mpatches.Patch(facecolor='none', edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle='-', label='PRIM Box (High-Adoption Region)')]
     
-    # 2. Posiziona l'etichetta della Colorbar in un nuovo asse sotto la Colorbar
+    # 2. Position the Colorbar label in a new axis below the Colorbar
     cbar_label_ax = fig.add_axes([0.10, CBAR_LABEL_Y_POS, 0.80, 0.01])
     cbar_label_ax.axis('off')
     cbar_label_ax.text(0.5, 0.5, COLORBAR_LABEL, ha='center', va='center', fontsize=FONTSIZE_CBAR_LABEL)
     
-    # 3. Posiziona la Legenda in un nuovo asse sotto l'etichetta della Colorbar
+    # 3. Position the Legend in a new axis below the Colorbar label
     legend_ax = fig.add_axes([0.10, LEGEND_Y_POS, 0.80, 0.01])
     legend_ax.axis('off') 
-    # Spostiamo la legenda leggermente a destra per bilanciare lo spazio
+    # Move the legend slightly to the right to balance the space
     legend_ax.legend(handles=legend_patches, loc='center right', fontsize=FONTSIZE_TEXT_SMALL + 1, framealpha=0.8, handlelength=2.5, borderpad=0.2)
 
-    # Nota statistica nel piè di pagina
+    # Statistical note in the footer
     fig.text(0.5, 0.005, "Error bars (subplot 1) show 95% confidence intervals ($\text{CI}$). See console for statistical significance tests.", ha='center', fontsize=FONTSIZE_TEXT_SMALL, style='italic', color='gray')
 
     # Adjusted top margin
     fig.tight_layout(rect=[0.12, 0.015, 1, 0.85]) 
 
-    # MIGLIORAMENTO: Imposta la risoluzione a 300 DPI
+    # Improvement: Set resolution to 300 DPI
     fig.savefig(output, dpi=300, bbox_inches='tight')
     print(f"✔ Heatmap saved to: {output.resolve()}")
 
