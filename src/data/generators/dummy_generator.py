@@ -70,6 +70,39 @@ class HeatmapGridEnhancedSchema:
     n_samples: int  # Sample size per bin per replication
 
 
+# =============================================================================
+# NEW: Enhanced Schemas for PRIM Trajectory with Replications
+# =============================================================================
+
+@dataclass
+class PRIMTrajectoryReplicationSchema:
+    """Individual replication data for PRIM trajectory uncertainty analysis."""
+    scenario: ScenarioType
+    iteration: int
+    replication_id: int
+    coverage: float
+    density: float
+    n_agents: int
+    is_selected: bool
+
+
+@dataclass
+class PRIMTrajectoryEnhancedSchema:
+    """Enhanced PRIM trajectory with statistical metrics."""
+    scenario: ScenarioType
+    iteration: int
+    coverage_mean: float
+    coverage_std: float
+    coverage_ci_lower: float
+    coverage_ci_upper: float
+    density_mean: float
+    density_std: float
+    density_ci_lower: float
+    density_ci_upper: float
+    n_agents_mean: float
+    is_selected: bool
+    n_replications: int
+
 @dataclass
 class HeatmapReplicationSchema:
     """Individual replication data for uncertainty analysis."""
@@ -425,57 +458,165 @@ def generate_prim_boxes(
     return [box]
 
 
-def generate_prim_trajectory(
+def generate_prim_trajectory_replications(
     scenario: ScenarioType,
     n_iterations: int,
+    n_replications: int,
+    noise_std: float,
     random_state: np.random.RandomState
-) -> List[PRIMTrajectorySchema]:
+) -> List[PRIMTrajectoryReplicationSchema]:
     """
-    Generate PRIM peeling trajectory data.
+    Generate PRIM peeling trajectory data with replications.
     
-    Simulates the iterative peeling process showing coverage-density trade-off.
+    Creates multiple runs to capture uncertainty in the peeling process.
     
     Args:
         scenario: Policy scenario
         n_iterations: Number of peeling iterations
+        n_replications: Number of Monte Carlo replications
+        noise_std: Standard deviation of noise to add
         random_state: Random state for reproducibility
         
     Returns:
-        List of trajectory points showing peeling progression
+        List of trajectory points for all replications
     """
-    trajectory = []
+    all_replications = []
     
+    # Base trajectory parameters per scenario
     if scenario == ScenarioType.SERVICES_INCENTIVE:
         # SI: Dramatic peeling (100% → 6% coverage, maintaining high density)
-        coverages = np.linspace(1.0, 0.06, n_iterations)
-        # Non-linear density increase
-        densities = 0.30 + 0.51 * (1 - coverages) ** 0.8
-        selected_iteration = n_iterations - 3  # Near the end
+        base_coverages = np.linspace(1.0, 0.06, n_iterations)
+        base_densities = 0.30 + 0.51 * (1 - base_coverages) ** 0.8
+        selected_iteration = n_iterations - 3
         
     elif scenario == ScenarioType.ECONOMIC_INCENTIVE:
         # EI: Moderate peeling (100% → 31% coverage)
-        coverages = np.linspace(1.0, 0.31, n_iterations)
-        densities = 0.25 + 0.40 * (1 - coverages) ** 0.6
+        base_coverages = np.linspace(1.0, 0.31, n_iterations)
+        base_densities = 0.25 + 0.40 * (1 - base_coverages) ** 0.6
         selected_iteration = n_iterations - 5
         
     else:  # NO_INCENTIVE
         # NI: Flat trajectory (no meaningful peeling)
-        coverages = np.linspace(1.0, 0.95, n_iterations)
-        densities = np.full(n_iterations, 0.20) + random_state.normal(0, 0.01, n_iterations)
-        selected_iteration = 0  # Select first iteration (no improvement)
+        base_coverages = np.linspace(1.0, 0.95, n_iterations)
+        base_densities = np.full(n_iterations, 0.20)
+        selected_iteration = 0
     
-    for i in range(n_iterations):
-        trajectory.append(PRIMTrajectorySchema(
-            scenario=scenario,
-            iteration=i,
-            coverage=float(coverages[i]),
-            density=float(np.clip(densities[i], 0, 1)),
-            n_agents=int(10000 * coverages[i]),
-            is_selected=(i == selected_iteration)
+    # Generate replications with noise
+    for rep_id in range(n_replications):
+        for i in range(n_iterations):
+            # Add stochastic noise to base trajectory
+            coverage_noise = random_state.normal(0, noise_std * 0.01)
+            density_noise = random_state.normal(0, noise_std)
+            
+            coverage = np.clip(base_coverages[i] + coverage_noise, 0.0, 1.0)
+            density = np.clip(base_densities[i] + density_noise, 0.0, 1.0)
+            
+            all_replications.append(PRIMTrajectoryReplicationSchema(
+                scenario=scenario,
+                iteration=i,
+                replication_id=rep_id,
+                coverage=coverage,
+                density=density,
+                n_agents=int(10000 * coverage),
+                is_selected=(i == selected_iteration)
+            ))
+    
+    return all_replications
+
+
+def aggregate_prim_trajectory_replications(
+    replications: List[PRIMTrajectoryReplicationSchema]
+) -> List[PRIMTrajectoryEnhancedSchema]:
+    """
+    Aggregate PRIM trajectory replications into summary statistics.
+    
+    Uses stats_utils to compute confidence intervals.
+    
+    Args:
+        replications: List of all replication data
+        
+    Returns:
+        List of aggregated trajectory points with statistics
+    """
+    # Import the stats utils we created in Step 1
+    from src.utils.stats_utils import aggregate_replications
+    import pandas as pd
+    
+    # Convert to DataFrame for easier aggregation
+    df = pd.DataFrame([asdict(r) for r in replications])
+    
+    # Rename replication_id to run_id for compatibility with stats_utils
+    df = df.rename(columns={'replication_id': 'run_id'})
+    
+    # Aggregate using our utility function
+    aggregated = aggregate_replications(
+        df,
+        group_cols=['scenario', 'iteration'],
+        value_cols=['coverage', 'density'],
+        confidence=0.95,
+        ci_method='parametric'
+    )
+    
+    # Convert back to schema objects
+    trajectory_enhanced = []
+    for _, row in aggregated.iterrows():
+        # Get the is_selected flag (same for all replications in group)
+        # Use replication_id here since we're working with original data
+        original_df = pd.DataFrame([asdict(r) for r in replications])
+        is_selected = original_df[
+            (original_df['scenario'] == row['scenario']) & 
+            (original_df['iteration'] == row['iteration'])
+        ]['is_selected'].iloc[0]
+        
+        trajectory_enhanced.append(PRIMTrajectoryEnhancedSchema(
+            scenario=ScenarioType(row['scenario']),
+            iteration=int(row['iteration']),
+            coverage_mean=row['coverage_mean'],
+            coverage_std=row['coverage_std'],
+            coverage_ci_lower=row['coverage_ci_lower'],
+            coverage_ci_upper=row['coverage_ci_upper'],
+            density_mean=row['density_mean'],
+            density_std=row['density_std'],
+            density_ci_lower=row['density_ci_lower'],
+            density_ci_upper=row['density_ci_upper'],
+            n_agents_mean=int(10000 * row['coverage_mean']),
+            is_selected=is_selected,
+            n_replications=int(row['n_replications'])
         ))
     
-    return trajectory
+    return trajectory_enhanced
 
+def generate_prim_trajectory(
+    scenario: ScenarioType,
+    n_iterations: int,
+    n_replications: int,
+    noise_std: float,
+    random_state: np.random.RandomState
+) -> Tuple[List[PRIMTrajectoryEnhancedSchema], List[PRIMTrajectoryReplicationSchema]]:
+    """
+    Generate complete PRIM trajectory data: both aggregated and disaggregated.
+    
+    ENHANCED VERSION: Includes replications for uncertainty quantification.
+    
+    Args:
+        scenario: Policy scenario
+        n_iterations: Number of peeling iterations
+        n_replications: Number of Monte Carlo replications
+        noise_std: Standard deviation of noise
+        random_state: Random state for reproducibility
+        
+    Returns:
+        Tuple of (aggregated_trajectory, all_replications)
+    """
+    # Generate all replications
+    replications = generate_prim_trajectory_replications(
+        scenario, n_iterations, n_replications, noise_std, random_state
+    )
+    
+    # Aggregate with statistics
+    aggregated = aggregate_prim_trajectory_replications(replications)
+    
+    return aggregated, replications
 
 # =============================================================================
 # Demographic Profile Generation (Table III)
@@ -620,8 +761,11 @@ def generate_scenario_data(
     print(f"  ├─ Identifying PRIM boxes...")
     prim_boxes = generate_prim_boxes(scenario, agents, random_state)
     
-    print(f"  ├─ Generating PRIM trajectory...")
-    prim_trajectory = generate_prim_trajectory(scenario, 15, random_state)
+    # MODIFICATO: Generate PRIM trajectory WITH replications
+    print(f"  ├─ Generating PRIM trajectory ({config.n_replications} replications)...")
+    prim_trajectory_summary, prim_trajectory_replications = generate_prim_trajectory(
+        scenario, 15, config.n_replications, config.noise_std, random_state
+    )
     
     print(f"  └─ Generating demographic profiles...")
     demographic_profiles = generate_demographic_profiles(scenario, agents, prim_boxes)
@@ -629,12 +773,12 @@ def generate_scenario_data(
     return {
         'agents': agents,
         'heatmap_grid': heatmap_grid,
-        'heatmap_replications': heatmap_replications,  # NEW
+        'heatmap_replications': heatmap_replications,
         'prim_boxes': prim_boxes,
-        'prim_trajectory': prim_trajectory,
+        'prim_trajectory_summary': prim_trajectory_summary,  # NUOVO
+        'prim_trajectory_replications': prim_trajectory_replications,  # NUOVO
         'demographic_profiles': demographic_profiles
     }
-
 
 def generate_all_scenarios(config: GeneratorConfig) -> dict:
     """
@@ -675,39 +819,48 @@ def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> 
     
     # Aggregate data across scenarios
     all_heatmaps = []
-    all_heatmap_reps = []  # NEW
+    all_heatmap_reps = []
     all_prim_boxes = []
-    all_trajectories = []
+    all_trajectories_summary = []  # MODIFICATO
+    all_trajectories_reps = []  # NUOVO
     all_profiles = []
     
     for scenario_name, data in all_data.items():
         all_heatmaps.extend(data['heatmap_grid'])
-        all_heatmap_reps.extend(data['heatmap_replications'])  # NEW
+        all_heatmap_reps.extend(data['heatmap_replications'])
         all_prim_boxes.extend(data['prim_boxes'])
-        all_trajectories.extend(data['prim_trajectory'])
+        all_trajectories_summary.extend(data['prim_trajectory_summary'])  # MODIFICATO
+        all_trajectories_reps.extend(data['prim_trajectory_replications'])  # NUOVO
         all_profiles.extend(data['demographic_profiles'])
     
     # Save aggregated heatmap (with statistics)
     print("  ├─ Saving heatmap_grid.csv (with CI)...")
     _save_enhanced_heatmap(all_heatmaps, output_dir / "heatmap_grid.csv")
     
-    # NEW: Save disaggregated replications
+    # Save disaggregated replications
     print("  ├─ Saving heatmap_replications.csv (all runs)...")
     _save_replications(all_heatmap_reps, output_dir / "heatmap_replications.csv")
     
-    # Save other files (unchanged)
+    # Save other files
     schemas_to_csv(all_prim_boxes, output_dir / "prim_boxes.csv")
-    schemas_to_csv(all_trajectories, output_dir / "prim_trajectory.csv")
+    
+    # NUOVO: Save PRIM trajectory summary
+    print("  ├─ Saving prim_trajectory_summary.csv (with CI)...")
+    _save_prim_trajectory_summary(all_trajectories_summary, output_dir / "prim_trajectory_summary.csv")
+    
+    # NUOVO: Save PRIM trajectory replications
+    print("  ├─ Saving prim_trajectory_raw.csv (all runs)...")
+    _save_prim_trajectory_replications(all_trajectories_reps, output_dir / "prim_trajectory_raw.csv")
+    
     schemas_to_csv(all_profiles, output_dir / "demographic_profiles.csv")
     
-    # NEW: Save scale metadata
+    # Save scale metadata
     print("  └─ Saving scale_metadata.json...")
     metadata = generate_scale_metadata(config)
     with open(output_dir / "scale_metadata.json", 'w') as f:
         json.dump(metadata, f, indent=2)
     
     print("✅ All data saved successfully!")
-
 
 def _save_enhanced_heatmap(data: List[HeatmapGridEnhancedSchema], filepath: Path):
     """Save enhanced heatmap grid with statistics."""
@@ -753,7 +906,56 @@ def _save_replications(data: List[HeatmapReplicationSchema], filepath: Path):
                 item.n_samples
             ])
 
+def _save_prim_trajectory_summary(data: List[PRIMTrajectoryEnhancedSchema], filepath: Path):
+    """Save PRIM trajectory summary with statistics."""
+    import csv
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'scenario', 'iteration', 
+            'coverage_mean', 'coverage_std', 'coverage_ci_lower', 'coverage_ci_upper',
+            'density_mean', 'density_std', 'density_ci_lower', 'density_ci_upper',
+            'n_agents_mean', 'is_selected', 'n_replications'
+        ])
+        for item in data:
+            writer.writerow([
+                item.scenario.value,
+                item.iteration,
+                item.coverage_mean,
+                item.coverage_std,
+                item.coverage_ci_lower,
+                item.coverage_ci_upper,
+                item.density_mean,
+                item.density_std,
+                item.density_ci_lower,
+                item.density_ci_upper,
+                item.n_agents_mean,
+                item.is_selected,
+                item.n_replications
+            ])
 
+
+def _save_prim_trajectory_replications(data: List[PRIMTrajectoryReplicationSchema], filepath: Path):
+    """Save all PRIM trajectory replications."""
+    import csv
+    
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'scenario', 'iteration', 'replication_id',
+            'coverage', 'density', 'n_agents', 'is_selected'
+        ])
+        for item in data:
+            writer.writerow([
+                item.scenario.value,
+                item.iteration,
+                item.replication_id,
+                item.coverage,
+                item.density,
+                item.n_agents,
+                item.is_selected
+            ])
 # =============================================================================
 # Main Execution
 # =============================================================================
