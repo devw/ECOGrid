@@ -1,23 +1,38 @@
 import pandas as pd
 from pathlib import Path
 
-def generate_demographic_table(csv_path: str, output_path: str = "/tmp/demographic_profiles.md"):
+def generate_demographic_table(csv_path: str, summary_csv_path: str,
+                               output_path: str = "/tmp/demographic_profiles.md"):
     """
-    Generate a Markdown table from demographic_profiles.csv and save it to /tmp/.
-
+    Generate an enriched Markdown table with 95% CI for density.
+    
     Parameters:
     - csv_path: path to demographic_profiles.csv
+    - summary_csv_path: path to prim_trajectory_summary.csv
     - output_path: where to save the Markdown table
     """
 
+    # Load data
     df = pd.read_csv(csv_path)
+    summary_df = pd.read_csv(summary_csv_path)
 
-    # Select relevant columns for table
+    # Compute 95% CI per scenario-segment
+    ci_df = summary_df.groupby("scenario").agg({
+        "density_ci_lower": "mean",
+        "density_ci_upper": "mean"
+    }).reset_index()
+
+    # Merge CI into main table
+    df = df.merge(ci_df, on="scenario", how="left")
+
+    # Create CI column as string
+    df["95% CI"] = df.apply(lambda x: f"[{x['density_ci_lower']:.2f}, {x['density_ci_upper']:.2f}]", axis=1)
+
+    # Select columns for table
     columns = [
-        "scenario", "segment_name", "coverage", "density", "lift",
+        "scenario", "segment_name", "coverage", "density", "lift", "95% CI",
         "n_agents_total", "n_agents_segment"
     ]
-
     table_df = df[columns]
 
     # Convert to Markdown table
@@ -39,4 +54,5 @@ def generate_demographic_table(csv_path: str, output_path: str = "/tmp/demograph
 
 if __name__ == "__main__":
     csv_file = "data/dummy/demographic_profiles.csv"
-    generate_demographic_table(csv_file)
+    summary_csv_file = "data/dummy/prim_trajectory_summary.csv"
+    generate_demographic_table(csv_file, summary_csv_file)
