@@ -48,7 +48,7 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
                 f"Iter {int(row['iteration'])}", 
                 (row["coverage_mean"], row["density_mean"]),
                 textcoords="offset points", xytext=(5, 15), ha='center',
-                fontsize=10, color=color,
+                fontsize=12, color=color,
                 arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0.1", 
                               color=color, linewidth=0.7)
             )
@@ -58,11 +58,11 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
             label="Random Targeting", zorder=1)
 
     # Labels and styling
-    ax.set_xlabel("Coverage (Mean)", fontsize=14)
-    ax.set_ylabel("Density (Mean ± 95% CI)", fontsize=14)
+    ax.set_xlabel("Coverage (Mean)", fontsize=16)
+    ax.set_ylabel("Density (Mean ± 95% CI)", fontsize=16)
     ax.set_title("PRIM Peeling Trajectory: Coverage-Density Tradeoff Across Policy Scenarios", 
-                fontsize=16)
-    ax.legend(title="Scenario")
+                fontsize=18)
+    ax.legend(title="Scenario", title_fontsize=14, fontsize=12)
     
     # Set limits with 5% margin
     margin = 0.05
@@ -74,7 +74,7 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
 
     # Save figure
     full_path = Path("/tmp") / output_path
-    plt.savefig(full_path, dpi=300, bbox_inches="tight")
+    plt.savefig(full_path, dpi=450, bbox_inches="tight")
     plt.close(fig)
     
     print(f"📊 Figure saved at: {full_path}")
