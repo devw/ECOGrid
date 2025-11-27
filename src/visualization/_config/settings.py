@@ -7,7 +7,7 @@ HEATMAP_FILE = "heatmap_grid.csv"
 PRIM_BOXES_FILE = "prim_boxes.csv"
 METADATA_FILE = "scale_metadata.json"
 # Updated output path to reflect final version
-OUTPUT_PATH = Path("/tmp/adoption_heatmaps_final_final_optimized.png") 
+OUTPUT_PATH = Path("/tmp/adoption_heatmaps.png") 
 
 SCENARIOS = {
     "NI": "No Incentive",

@@ -16,6 +16,9 @@ from ._config.settings import *
 
 # Import I/O functions from the centralized data module
 from ._data_io.csv_reader import load_csv, load_metadata
+from ._processors.data_utils import scenario_grid
+from ._processors.stats_utils import compute_pairwise_significance
+from .plotting import HeatmapPlotter
 
 # --- LOGIC SECTIONS (To be moved in next steps) ---
 
@@ -29,144 +32,6 @@ from ._data_io.csv_reader import load_csv, load_metadata
 from itertools import combinations
 import numpy as np
 import pandas as pd
-from scipy import stats
-
-# --- GRID / PIVOT HELPERS ---
-
-def _pivot_grid(df: pd.DataFrame, value_col: str) -> np.ndarray:
-    """Pivot and return a 2D numpy array aligned by income_bin (rows) and trust_bin (cols)."""
-    table = (
-        df.pivot_table(index="income_bin", columns="trust_bin", values=value_col, fill_value=0)
-          .sort_index()
-          .sort_index(axis=1)
-    )
-    return table.values
-
-
-def scenario_grid(df: pd.DataFrame, scenario: str) -> dict:
-    """Extract grid arrays and basic metadata for a scenario."""
-    sub = df[df["scenario"] == scenario].copy()
-    if sub.empty:
-        raise ValueError(f"No data for scenario {scenario}")
-
-    trust = np.sort(sub["trust_bin"].unique())
-    income = np.sort(sub["income_bin"].unique())
-
-    return {
-        "trust": trust,
-        "income": income,
-        "adoption": _pivot_grid(sub, "adoption_rate"),
-        "std_dev": _pivot_grid(sub, "std_dev"),
-        "ci_lower": _pivot_grid(sub, "ci_lower"),
-        "ci_upper": _pivot_grid(sub, "ci_upper"),
-        "n_replications": int(sub["n_replications"].iloc[0]) if "n_replications" in sub.columns else None,
-    }
-
-# --- STATISTICAL ANALYSIS ---
-
-def compute_pairwise_significance(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute pairwise Welch t-test p-values per grid cell between scenarios."""
-    rows = []
-    for (t, y), group in df.groupby(["trust_bin", "income_bin"]):
-        for s1, s2 in combinations(SCENARIOS.keys(), 2):
-            a = group[group["scenario"] == s1]
-            b = group[group["scenario"] == s2]
-            if a.empty or b.empty or len(a) == 0 or len(b) == 0:
-                continue
-
-            mean1, std1, n1 = a[["adoption_rate", "std_dev", "n_replications"]].values[0]
-            mean2, std2, n2 = b[["adoption_rate", "std_dev", "n_replications"]].values[0]
-
-            se2 = (std1**2 / n1) + (std2**2 / n2)
-            if se2 <= 0:
-                pval = 1.0
-            else:
-                tstat = (mean1 - mean2) / np.sqrt(se2)
-                denom = (std1**2 / n1) ** 2 / (n1 - 1) + (std2**2 / n2) ** 2 / (n2 - 1)
-                df_ = (se2 ** 2) / denom if denom > 0 else (n1 + n2 - 2)
-                pval = 2 * (1 - stats.t.cdf(abs(tstat), df_))
-
-            rows.append({
-                "trust_bin": t,
-                "income_bin": y,
-                "scenario_A": s1,
-                "scenario_B": s2,
-                "mean_diff": mean1 - mean2,
-                "p_value": pval,
-                "significant": pval < P_VALUE_THRESHOLD,
-            })
-
-    return pd.DataFrame(rows)
-
-# --- PLOTTING CLASS ---
-class HeatmapPlotter:
-    """Handle plotting of a single heatmap with overlays and PRIM box annotation."""
-
-    @staticmethod
-    def _prim_patch(box: pd.Series, trust: np.ndarray, income: np.ndarray) -> Rectangle:
-        idx = lambda arr, val: np.searchsorted(arr, val)
-        x0 = idx(trust, box["trust_min"]) - 0.5
-        y0 = idx(income, box["income_min"]) - 0.5
-        w = idx(trust, box["trust_max"]) - idx(trust, box["trust_min"])
-        h = idx(income, box["income_max"]) - idx(income, box["income_min"])
-        # Improvement: Changed linestyle to "-" and used updated PRIM_COLOR/PRIM_WIDTH
-        return Rectangle((x0, y0), w, h, fill=False, edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle="-", zorder=10)
-
-    @staticmethod
-    def _prim_label(box: pd.Series) -> str:
-        return f"PRIM Box: Coverage={box['coverage']:.0%}, Density={box['density']:.0%}, Lift={box['lift']:.1f}"
-
-    @staticmethod
-    def _add_ci_overlay(ax: plt.Axes, trust: np.ndarray, income: np.ndarray, grid: dict, step: int):
-        xs = np.arange(0, len(trust), step)
-        ys = np.arange(0, len(income), step)
-        for i in ys:
-            for j in xs:
-                m = grid['adoption'][i, j]
-                lo = grid['ci_lower'][i, j]
-                hi = grid['ci_upper'][i, j]
-                ax.plot([j, j], [i + (lo - m), i + (hi - m)], color='white', alpha=0.5, linewidth=1.0, zorder=6)
-
-
-    def plot_single(self, ax: plt.Axes, grid: dict, title: str, prim_box: pd.Series | None, show_ci: bool, meta: dict) -> plt.Axes:
-        trust, income = grid['trust'], grid['income']
-        im = ax.imshow(grid['adoption'], origin='lower', aspect='auto', cmap=CMAP, vmin=0, vmax=1,
-                       extent=[-0.5, len(trust) - 0.5, -0.5, len(income) - 0.5])
-
-        if prim_box is not None:
-            ax.add_patch(self._prim_patch(prim_box, trust, income))
-            # Improvement: Removed alpha for better text contrast
-            ax.text(0.98, 0.02, self._prim_label(prim_box), transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color=PRIM_COLOR,
-                    ha='right', va='bottom', bbox=dict(boxstyle='round', facecolor='black', alpha=1.0), zorder=11)
-
-        if show_ci:
-            self._add_ci_overlay(ax, trust, income, grid, CI_DOWNSAMPLE)
-
-        # Improvement: Uniformed statistical notation in the title (mu/CI)
-        ax.set_title(
-            f"{title} (N={grid['n_replications']}, $\\mu \\pm 95\\% \\text{{ CI}}$)",
-            fontsize=FONTSIZE_SUBTITLE,
-            fontweight='bold'
-        )
-        
-        # Y-Axis label split into two lines
-        y_label = meta.get('income', {}).get('interpretation', 'Income (0→100)')
-        y_label = y_label.replace('(0=lowest, 100=highest)', '\n(0=lowest, 100=highest)')
-        ax.set_xlabel(meta.get('trust', {}).get('interpretation', 'Trust (0→1)'), fontsize=FONTSIZE_AXES_LABEL)
-        ax.set_ylabel(y_label, fontsize=FONTSIZE_AXES_LABEL)
-
-        xt = np.linspace(0, len(trust) - 1, 5).astype(int)
-        yt = np.linspace(0, len(income) - 1, 5).astype(int)
-        ax.set_xticks(xt)
-        ax.set_yticks(yt)
-        ax.set_xticklabels([f"{trust[i]:.2f}" for i in xt], fontsize=FONTSIZE_AXES_TICKS)
-        ax.set_yticklabels([f"{income[i]:.0f}" for i in yt], fontsize=FONTSIZE_AXES_TICKS)
-
-        # Improvement: Uniformed statistical notation for standard deviation ($\sigma$)
-        ax.text(0.02, 0.98, f"Avg $\\sigma$={np.mean(grid['std_dev']):.3f}", transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color='white',
-                ha='left', va='top', bbox=dict(boxstyle='round', facecolor='black', alpha=0.5), zorder=11)
-
-        return im
 
 # --- CONTROLLER ---
 
