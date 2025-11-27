@@ -6,6 +6,7 @@ Orchestrates data loading, processing, statistical analysis, and plotting.
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import pandas as pd
 
 # Import constants (paths, styles, colors)
 from ._config.settings import *
