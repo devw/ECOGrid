@@ -38,8 +38,8 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
         selected = subset[subset["is_selected"]]
         ax.scatter(
             selected["coverage_mean"], selected["density_mean"],
-            color=color, marker="*", s=200, edgecolor="black",
-            linewidth=1.2, zorder=3
+            color=color, marker="*", s=500, edgecolor="gray",
+            linewidth=0.1, zorder=3
         )
         
         # Annotate key points
