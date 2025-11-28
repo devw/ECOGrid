@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI script to generate dummy data for ECOGrid simulation.
+CLI script to generate montecarlo data for ECOGrid simulation.
 """
 
 from pathlib import Path
@@ -25,7 +25,7 @@ if __name__ == "__main__":
             "n_replications": 100,
             "noise_std": 0.05,
             "seed": 42,
-            "output": Path("data/dummy")
+            "output": Path("data/montecarlo")
         }).parse_args()
 
         # Create configuration
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
         # Display configuration
         print("=" * 70)
-        print("🚀 ECOGrid Dummy Data Generator (Enhanced v2.0)")
+        print("🚀 ECOGrid Montecarlo Data Generator (Enhanced v2.0)")
         print("=" * 70)
         print(f"Configuration:")
         print(f"  • Agents per scenario: {config.n_agents:,}")
