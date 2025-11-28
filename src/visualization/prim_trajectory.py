@@ -80,4 +80,4 @@ def plot_prim_trajectory_summary(csv_path: str, output_path: str = "prim_traject
     print(f"📊 Figure saved at: {full_path}")
 
 if __name__ == "__main__":
-    plot_prim_trajectory_summary("data/dummy/prim_trajectory_summary.csv")
+    plot_prim_trajectory_summary("data/montecarlo/prim_trajectory_summary.csv")

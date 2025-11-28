@@ -2,7 +2,7 @@ from pathlib import Path
 
 # --- CONFIGURATION ---
 # Dummy paths for execution context
-DATA_DIR = Path("data/dummy")
+DATA_DIR = Path("data/montecarlo")
 HEATMAP_FILE = "heatmap_grid.csv"
 PRIM_BOXES_FILE = "prim_boxes.csv"
 METADATA_FILE = "scale_metadata.json"

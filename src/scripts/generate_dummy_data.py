@@ -15,7 +15,7 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.data.generators.dummy_generator import (
+from src.data.montecarlo_generators.dummy_generator import (
     GeneratorConfig,
     generate_all_scenarios,
     save_all_data

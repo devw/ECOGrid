@@ -11,11 +11,11 @@ from .._config.settings import HEATMAP_FILE, PRIM_BOXES_FILE, METADATA_FILE, DAT
 
 def load_csv(name: str) -> pd.DataFrame:
     """
-    Carica un file CSV dal disco o genera dati dummy se non trovato.
+    Carica un file CSV dal disco o genera dati montecarlo se non trovato.
     """
     path = DATA_DIR / name
     if not path.exists():
-        # Logica per la creazione di dati dummy
+        # Logica per la creazione di dati montecarlo
         if name == HEATMAP_FILE:
             num_bins = 10
             np.random.seed(42)
@@ -57,8 +57,8 @@ def load_csv(name: str) -> pd.DataFrame:
                 "trust": {"interpretation": "Agent trust propensity score (0=no trust, 1=full trust)"},
                 "income": {"interpretation": "Income percentile in population (0=lowest, 100=highest)"}
             }
-        # Se il file non è uno di quelli gestiti da dummy, solleva l'errore
-        raise FileNotFoundError(f"File non trovato: {path} e dati dummy non disponibili per questo tipo.")
+        # Se il file non è uno di quelli gestiti da montecarlo, solleva l'errore
+        raise FileNotFoundError(f"File non trovato: {path} e dati montecarlo non disponibili per questo tipo.")
     
     # Se il file esiste, caricalo
     return pd.read_csv(path)

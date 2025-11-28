@@ -136,7 +136,7 @@ def generate_demographic_table(csv_path: str,
 # ----------------------------------------------------
 
 if __name__ == "__main__":
-    csv_file = "data/dummy/demographic_profiles.csv"
-    summary_csv_file = "data/dummy/prim_trajectory_summary.csv"
-    raw_csv_file = "data/dummy/prim_trajectory_raw.csv"
+    csv_file = "data/montecarlo/demographic_profiles.csv"
+    summary_csv_file = "data/montecarlo/prim_trajectory_summary.csv"
+    raw_csv_file = "data/montecarlo/prim_trajectory_raw.csv"
     generate_demographic_table(csv_file, summary_csv_file, raw_csv_file)

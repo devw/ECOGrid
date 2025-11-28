@@ -1,5 +1,5 @@
 """
-Data schemas for ECOGrid dummy data generation.
+Data schemas for ECOGrid montecarlo data generation.
 
 This module defines the structure of all data types used in the simulation
 using Pydantic for validation and easy CSV conversion.
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     from pathlib import Path
     
     # Create output directory
-    output_dir = Path("data/dummy")
+    output_dir = Path("data/montecarlo")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print("🧪 Testing schemas...")

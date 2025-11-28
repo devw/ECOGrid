@@ -1,0 +1,4 @@
+scenario,box_id,trust_min,trust_max,income_min,income_max,coverage,density,lift
+NI,0,0.0,1.0,0.0,100.0,1.0,0.2,1.0
+SI,0,0.65,1.0,0.0,100.0,0.06,0.81,2.5
+EI,0,0.55,1.0,30.0,100.0,0.31,0.65,1.8
