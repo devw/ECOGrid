@@ -1,4 +1,0 @@
-scenario,segment_name,trust_min,trust_max,income_min,income_max,coverage,density,lift,n_agents_total,n_agents_segment
-NI,Baseline Population (No Segmentation),0.0,1.0,0.0,100.0,1.0,0.2,1.0,10000,10000
-SI,High Trust Community (Trust ≥ 0.65),0.65,1.0,0.0,100.0,0.06,0.81,2.5,10000,600
-EI,"High Trust + Mid-High Income (Trust ≥ 0.55, Income ≥ 30)",0.55,1.0,30.0,100.0,0.31,0.65,1.8,10000,3100
