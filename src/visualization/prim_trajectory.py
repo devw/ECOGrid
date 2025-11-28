@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-
+from src.utils.cli_parser import base_parser, safe_run
 from ._utils.file_utils import load_csv_or_fail
 
 def plot_prim_trajectory_summary(
@@ -80,19 +80,14 @@ def plot_prim_trajectory_summary(
     plt.close(fig)
     print(f"✔ Figure saved at: {output_path.resolve()}")
 
+def main():
+    args = base_parser(defaults={
+        "data_dir": Path("data/montecarlo"),
+        "output": Path("/tmp/prim_trajectory.png"),
+    }).parse_args()
+
+    csv_file = Path(args.data_dir) / "prim_trajectory_summary.csv"
+    plot_prim_trajectory_summary(csv_file, args.output)
 
 if __name__ == "__main__":
-    try:
-        import argparse
-
-        parser = argparse.ArgumentParser(description="Plot PRIM Peeling Trajectory")
-        parser.add_argument("--data-dir", type=str, default="data/montecarlo", help="Path to data directory")
-        parser.add_argument("--output", type=str, default="/tmp/prim_trajectory.png", help="Output figure path")
-        args = parser.parse_args()
-
-        csv_file = Path(args.data_dir) / "prim_trajectory_summary.csv"
-        plot_prim_trajectory_summary(csv_file, args.output)
-    except FileNotFoundError as e:
-        import sys
-        print(f"❌ {e}")
-        sys.exit(1)  # Exit immediately without traceback
+    safe_run(main)

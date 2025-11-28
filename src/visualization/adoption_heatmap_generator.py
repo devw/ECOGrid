@@ -6,6 +6,7 @@ Orchestrates data loading, processing, statistical analysis, and plotting.
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from src.utils.cli_parser import base_parser, safe_run
 
 from ._config.settings import SCENARIOS, FONTSIZE_TITLE, SUPTITLE_Y, COLORBAR_Y_POS, PRIM_COLOR, PRIM_WIDTH, CBAR_LABEL_Y_POS, LEGEND_Y_POS, COLORBAR_LABEL, FONTSIZE_CBAR_LABEL, FONTSIZE_TEXT_SMALL
 from ._processors.data_utils import scenario_grid
@@ -104,16 +105,13 @@ def plot_all(output: Path, data_dir: Path):
 
     return fig
 
+def main():
+    args = base_parser(defaults={
+        "data_dir": Path("data/montecarlo"),
+        "output": Path("/tmp/adoption_heatmap.png"),
+    }).parse_args()
+
+    plot_all(args.output, args.data_dir)
 
 if __name__ == "__main__":
-    try:
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--data-dir", type=Path, default=Path("data/montecarlo"), help="Directory containing CSV/JSON files")
-        parser.add_argument("--output", type=Path, default=Path("/tmp/adoption_heatmap.png"), help="Path to save the output figure")
-        args = parser.parse_args()
-        plot_all(args.output, args.data_dir)
-    except FileNotFoundError as e:
-        import sys
-        print(f"❌ {e}")
-        sys.exit(1)  # Exit immediately without traceback
+    safe_run(main)

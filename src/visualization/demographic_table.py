@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
-import argparse
 from ._utils.file_utils import load_csv_or_fail
+from src.utils.cli_parser import base_parser, safe_run
 
 # ----------------------------------------------------
 # 1. Utility functions
@@ -108,22 +108,15 @@ def generate_demographic_table(csv_path: Path,
     print(f"📄 Markdown table saved to: {output_path}")
 
 
-# ----------------------------------------------------
-# 3. Script entry point
-# ----------------------------------------------------
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate PRIM demographic table")
-    parser.add_argument("--data-dir", type=str, required=True, help="Directory containing CSV files")
-    parser.add_argument("--output", type=str, default="/tmp/demographic_profiles.md", help="Output Markdown file path")
-    args = parser.parse_args()
-
-    data_dir = Path(args.data_dir)
-    output_path = Path(args.output)
-
-    generate_demographic_table(
-        csv_path=data_dir / "demographic_profiles.csv",
-        summary_csv_path=data_dir / "prim_trajectory_summary.csv",
-        raw_csv_path=data_dir / "prim_trajectory_raw.csv",
-        output_path=output_path
-    )
+    safe_run(lambda: (
+        (args := base_parser(defaults={"output": Path("/tmp/demographic_profiles.md")}).parse_args()),
+        (data_dir := Path(args.data_dir)) or (lambda: (_ for _ in ()).throw(ValueError("❌ --data-dir argument is required")))(),
+        (output_path := Path(args.output)),
+        generate_demographic_table(
+            csv_path=data_dir / "demographic_profiles.csv",
+            summary_csv_path=data_dir / "prim_trajectory_summary.csv",
+            raw_csv_path=data_dir / "prim_trajectory_raw.csv",
+            output_path=output_path
+        )
+    ))
