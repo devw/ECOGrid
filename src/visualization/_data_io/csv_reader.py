@@ -1,21 +1,20 @@
-# Import esterni necessari
 from pathlib import Path
 import json
 import numpy as np
 import pandas as pd
+from .._config.settings import HEATMAP_FILE, PRIM_BOXES_FILE, METADATA_FILE
 
-# Importa le costanti dai settings
-from .._config.settings import HEATMAP_FILE, PRIM_BOXES_FILE, METADATA_FILE, DATA_DIR
+# --- IO UTILITIES ---
 
-# --- IO UTILITIES (Spostate e Modificate) ---
-
-def load_csv(name: str) -> pd.DataFrame:
+def load_csv(path: Path) -> pd.DataFrame:
     """
-    Carica un file CSV dal disco o genera dati montecarlo se non trovato.
+    Load a CSV from the given path. 
+    If the file is missing and recognized as Monte Carlo data, generate dummy data.
     """
-    path = DATA_DIR / name
     if not path.exists():
-        # Logica per la creazione di dati montecarlo
+        name = path.name
+        print(f"⚠️ File not found: {path}. Attempting Monte Carlo fallback if applicable...")
+
         if name == HEATMAP_FILE:
             num_bins = 10
             np.random.seed(42)
@@ -40,8 +39,11 @@ def load_csv(name: str) -> pd.DataFrame:
                             'ci_upper': np.clip(adoption + 1.96 * std_dev / np.sqrt(100), 0, 1),
                             'n_replications': 1000,
                         })
+            print(f"✅ Monte Carlo heatmap data generated for {name}")
             return pd.DataFrame(data)
+
         elif name == PRIM_BOXES_FILE:
+            print(f"✅ Monte Carlo PRIM boxes generated for {name}")
             return pd.DataFrame({
                 'scenario': ['NI', 'SI', 'EI'],
                 'trust_min': [0.03, 0.5, 0.6],
@@ -52,32 +54,36 @@ def load_csv(name: str) -> pd.DataFrame:
                 'density': [0.5, 0.9, 0.8],
                 'lift': [1.0, 1.8, 1.6],
             })
+
         elif name == METADATA_FILE:
+            print(f"✅ Monte Carlo metadata generated for {name}")
             return {
                 "trust": {"interpretation": "Agent trust propensity score (0=no trust, 1=full trust)"},
                 "income": {"interpretation": "Income percentile in population (0=lowest, 100=highest)"}
             }
-        # Se il file non è uno di quelli gestiti da montecarlo, solleva l'errore
-        raise FileNotFoundError(f"File non trovato: {path} e dati montecarlo non disponibili per questo tipo.")
-    
-    # Se il file esiste, caricalo
+
+        raise FileNotFoundError(f"❌ File not found: {path}. Monte Carlo fallback not available for this file.")
+
+    # File exists
+    print(f"📄 Loading CSV: {path}")
     return pd.read_csv(path)
 
 
-def load_metadata() -> dict:
+def load_metadata(path: Path) -> dict:
     """
-    Carica i metadati dal file JSON.
+    Load JSON metadata from the given path.
     """
-    path = DATA_DIR / METADATA_FILE
     if not path.exists():
-        # Ritorna i metadati di fallback se il file non esiste
+        print(f"⚠️ Metadata file not found: {path}. Using default Monte Carlo metadata.")
         return {
             "trust": {"interpretation": "Agent trust propensity score (0=no trust, 1=full trust)"},
             "income": {"interpretation": "Income percentile in population (0=lowest, 100=highest)"}
         }
+    
     try:
         with open(path, "r") as f:
+            print(f"📄 Loading metadata JSON: {path}")
             return json.load(f)
     except json.JSONDecodeError:
-        print(f"ATTENZIONE: Errore di decodifica JSON in {path}. Ritorno metadati vuoti.")
+        print(f"❌ JSON decode error in {path}. Returning empty metadata.")
         return {}
