@@ -1,89 +1,61 @@
 # 📊 Visualization Scripts Guide
 
-This document explains how to run the visualization scripts available in this project, which generate adoption heatmaps, PRIM peeling trajectory figures, and PRIM demographic tables.
+This project provides scripts to generate **adoption heatmaps**, **PRIM trajectory figures**, and **demographic tables** from simulation data.
 
-## ⚠️ Important Usage Note: Modular Execution
+## ⚠️ Important Note: Modular Execution
 
-Following the recent code refactoring, all visualization scripts use **relative imports** (`from ._module import...`). Therefore, they must be executed as **Python modules** using the `python -m` command.
-
-  * **Execution Location:** Always run the commands from the **project root** directory (the directory containing the `src` folder).
-
------
-
-## 🛠️ Overview of Scripts
-
-| Script                          | Description                                                                                             | Output                         |
-| :------------------------------ | :------------------------------------------------------------------------------------------------------ | :----------------------------- |
-| `adoption_heatmap_generator.py` | Generates heatmaps of the adoption rate as a function of Trust and Income across policy scenarios.      | PNG figures saved in `/tmp/`   |
-| `prim_trajectory.py`            | Generates the PRIM peeling trajectory figure (coverage vs density) for different policy scenarios.      | PNG figure saved in `/tmp/`    |
-| `demographic_table.py`          | Generates a Markdown table with demographic profiles of high-adoption segments across policy scenarios. | Markdown file saved in `/tmp/` |
-
------
-
-## ⚙️ Installation
-
-Ensure you have installed all dependencies listed in `requirements.txt`. The following are required for visualization scripts:
+All visualization scripts now use **relative imports**, so they must be run as **Python modules** from the **project root**:
 
 ```bash
-pip install -r requirements.txt
-```
+python -m src.visualization.<script_name>
+````
 
-**Optional:** If running the Markdown table script, ensure `tabulate` is installed:
+---
 
-```bash
-pip install tabulate
-```
+## 🛠️ Available Scripts
 
------
+| Script                          | Description                                                       | Output                    |
+| :------------------------------ | :---------------------------------------------------------------- | :------------------------ |
+| `adoption_heatmap_generator.py` | Heatmaps of adoption rate vs Trust and Income for each scenario.  | PNG saved in `/tmp/`      |
+| `prim_trajectory.py`            | PRIM peeling trajectory (coverage vs density) for scenarios.      | PNG saved in `/tmp/`      |
+| `demographic_table.py`          | Markdown table of demographic profiles of high-adoption segments. | Markdown saved in `/tmp/` |
 
-## 🚀 Usage
+---
 
-Navigate to the project root and run the scripts using the **module execution** syntax (`python -m`).
+## 🚀 Usage Examples
 
 ### 🌡️ Adoption Heatmap
 
-Execute the modular script:
-
 ```bash
-python -m src.visualization.adoption_heatmap_generator
+python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo --output /tmp/adoption_montecarlo.png
 ```
-
-This will generate heatmaps of adoption rate for each scenario and save them to `/tmp/`.
 
 ### 📈 PRIM Peeling Trajectory
 
-Execute the modular script:
-
 ```bash
-python -m src.visualization.prim_trajectory
+python -m src.visualization.prim_trajectory --data-dir data/montecarlo --output /tmp/prim_trajectory.png
 ```
 
-This will generate the PRIM peeling trajectory figure and save it to `/tmp/`. The console will display the saved file path.
-
-### 📝 PRIM Demographic Table
-
-Execute the modular script:
+### 📝 Demographic Table
 
 ```bash
-python -m src.visualization.demographic_table
+python -m src.visualization.demographic_table --data-dir data/montecarlo --output /tmp/demographic_profiles.md
 ```
 
-This will generate a Markdown table of demographic profiles and save it to `/tmp/`. The console will display the saved file path.
-
------
+---
 
 ## 💾 Output
 
-All visualization scripts save outputs to `/tmp/` by default. Example paths:
+Default outputs are saved to `/tmp/`. Example files:
 
-  * `/tmp/adoption_heatmap.png`
-  * `/tmp/figura2_prim_trajectory.png`
-  * `/tmp/demographic_profiles.md`
+* `/tmp/adoption_montecarlo.png`
+* `/tmp/prim_trajectory.png`
+* `/tmp/demographic_profiles.md`
 
-You can open the Markdown table in any editor or render it in Jupyter notebooks.
+---
 
 ## 📝 Notes
 
-  * Scripts can currently read data from available CSV files. In the future, they will also support outputs produced by the MESA simulations.
-  * You can customize paths in the scripts if needed, but `/tmp/` is the default for temporary outputs. The default paths are now defined in `src/visualization/_config/settings.py`.
-  * For high-quality figures, you may modify figure size and DPI parameters inside the `_config/settings.py` file.
+* Scripts read data from the specified `--data-dir`.
+* Default paths and figure settings are defined in `src/visualization/_config/settings.py`.
+* Monte Carlo and MESA simulation outputs can both be used once available.
