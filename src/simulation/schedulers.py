@@ -1,7 +1,7 @@
-from simulation.model import SimulationModel
+# src/simulation/schedulers.py
+class MockScheduler:
+    def __init__(self):
+        self.agents = []
 
-if __name__ == "__main__":
-    model = SimulationModel()
-    for _ in range(3):  # run 3 steps
-        model.step()
-    print("Simulation ran successfully with mock agents.")
+    def add(self, agent):
+        self.agents.append(agent)

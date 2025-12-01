@@ -1,5 +1,4 @@
-from mesa import Agent
-
-class BaseAgent(Agent):
-    def __init__(self, unique_id, model):
-        super().__init__(unique_id, model)
+# src/simulation/agents/base_agent.py
+class BaseAgent:
+    def __init__(self, unique_id):
+        self.unique_id = unique_id
