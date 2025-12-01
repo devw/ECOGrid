@@ -1,18 +1,37 @@
-# src/simulation/model.py
+from mesa import Model
 from src.simulation.agents.base_agent import BaseAgent
-from src.simulation.schedulers  import MockScheduler
+from src.simulation.agents.consumer_agent import ConsumerAgent
+from src.simulation.agents.prosumer_agent import ProsumerAgent
+from src.simulation.agents.grid_agent import GridAgent
 
-class SimulationModel:
-    def __init__(self, N_consumers=2, N_prosumers=2, N_grids=1, seed=42):
-        self.schedule = MockScheduler()
-        # create mock agents
-        for i in range(N_consumers):
-            self.schedule.add(BaseAgent(unique_id=f"C{i+1}"))
-        for i in range(N_prosumers):
-            self.schedule.add(BaseAgent(unique_id=f"P{i+1}"))
-        for i in range(N_grids):
-            self.schedule.add(BaseAgent(unique_id=f"G{i+1}"))
 
+class SimulationModel(Model):
+    """
+    Skeleton of the Energy Community ABM using Mesa.
+    This model creates mock agents and steps through a few iterations.
+    """
+    def __init__(self, n_consumers=5, n_prosumers=5, n_grid_agents=1, seed=None):
+        super().__init__(seed=seed)
+        
+        # Create Consumer agents
+        for i in range(n_consumers):
+            agent = ConsumerAgent(i, self)
+            # Agents are automatically registered when created in Mesa 3.x
+        
+        # Create Prosumer agents
+        for i in range(n_consumers, n_consumers + n_prosumers):
+            agent = ProsumerAgent(i, self)
+        
+        # Create Grid agents
+        for i in range(n_consumers + n_prosumers, n_consumers + n_prosumers + n_grid_agents):
+            agent = GridAgent(i, self)
+    
     def step(self):
-        # mock step: do nothing
-        pass
+        """
+        Advance the model by one step.
+        In Mesa 3.x, we iterate through self.agents directly.
+        Agents are shuffled randomly by default when using agents.shuffle().
+        """
+        # Shuffle agents for random activation order (like RandomActivation)
+        for agent in self.agents.shuffle():
+            agent.step()

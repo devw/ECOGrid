@@ -22,7 +22,7 @@ def parse_args():
     )
     parser.add_argument("--n-consumers", type=int, default=2, help="Number of Consumer agents")
     parser.add_argument("--n-prosumers", type=int, default=2, help="Number of Prosumer agents")
-    parser.add_argument("--n-grids", type=int, default=1, help="Number of Grid agents")
+    parser.add_argument("--n-grid-agents", type=int, default=1, help="Number of Grid agents")  # Changed from n-grids
     parser.add_argument("--n-steps", type=int, default=3, help="Number of simulation steps")
     parser.add_argument("--output", type=str, default="data/abm", help="Folder to save outputs")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
@@ -50,9 +50,9 @@ def main():
 
     # Initialize mock model
     model = SimulationModel(
-        N_consumers=args.n_consumers,
-        N_prosumers=args.n_prosumers,
-        N_grids=args.n_grids,
+        n_consumers=args.n_consumers,
+        n_prosumers=args.n_prosumers,
+        n_grid_agents=args.n_grid_agents,  # Changed from n_grids
         seed=args.seed
     )
 
@@ -62,7 +62,7 @@ def main():
         model.step()  # does nothing in mock
         step_data = [
             {"agent_id": agent.unique_id, "type": type(agent).__name__}
-            for agent in model.schedule.agents
+            for agent in model.agents  # Changed from model.schedule.agents
         ]
         all_steps_data.append({"step": step + 1, "agents": step_data})
 
