@@ -150,6 +150,7 @@ cython_debug/
 # MonteCarlo and Dummy output
 data/montecarlo/
 data/dummy/
+data/abm/
 
 # Raw data (potentially large or sensitive)
 data/raw/**

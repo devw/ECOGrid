@@ -13,7 +13,7 @@ import csv
 import json
 
 # Import mock model and agents
-from simulation.model import SimulationModel
+from src.simulation.model import SimulationModel
 
 
 def parse_args():
@@ -29,14 +29,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def save_agents_csv(agents, file_path):
+def save_agents_csv(agents_data, file_path):
     """Save agent states to CSV (mock data)"""
     fieldnames = ["agent_id", "type"]
     with open(file_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        for agent in agents:
-            writer.writerow({"agent_id": agent.unique_id, "type": type(agent).__name__})
+        for agent in agents_data:  # agent è già un dict
+            writer.writerow(agent)
 
 
 def main():

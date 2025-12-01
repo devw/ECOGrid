@@ -1,6 +1,6 @@
 # src/simulation/model.py
-from simulation.agents.base_agent import BaseAgent
-from simulation.schedulers import MockScheduler
+from src.simulation.agents.base_agent import BaseAgent
+from src.simulation.schedulers  import MockScheduler
 
 class SimulationModel:
     def __init__(self, N_consumers=2, N_prosumers=2, N_grids=1, seed=42):
