@@ -1,6 +1,6 @@
 # 📦 ABM Energy Community Data Generation Guide
 
-ECOGrid now supports generating synthetic data using **Agent-Based Modeling (ABM)** to simulate energy community dynamics. This guide explains why ABM-generated data is important, how to generate it, and how to structure the outputs for downstream analysis.
+ECOGrid now supports generating synthetic data using **Agent-Based Modeling (ABM)** to simulate energy community dynamics. This guide explains the purpose of ABM-generated data, how to generate it, and how to structure outputs for downstream analysis.
 
 ---
 
@@ -8,9 +8,9 @@ ECOGrid now supports generating synthetic data using **Agent-Based Modeling (ABM
 
 ABM-generated data is essential for:
 
-* **Testing & Development** — Provides realistic agent-level trajectories.
-* **Scenario Analysis** — Enables experimentation with different incentive policies and agent compositions.
-* **Reproducibility** — Ensures anyone can reproduce the same trajectories using a fixed random seed.
+- **Testing & Development** — Provides realistic agent-level trajectories.
+- **Scenario Analysis** — Enables experimentation with different incentive policies and agent compositions.
+- **Reproducibility** — Ensures anyone can reproduce the same trajectories using a fixed random seed.
 
 All generated data is stored in `data/abm/`.
 
@@ -18,10 +18,10 @@ All generated data is stored in `data/abm/`.
 
 ## 1️⃣ Data Generation
 
-Data generation is handled by:
+Data generation involves:
 
-* **Script:** `src/scripts/generate_abm_energy_community.py`
-* **Logic:** `src/simulation/model.py` and `src/simulation/agents/`
+- **Script:** `src/scripts/generate_abm_energy_community.py`  
+- **Logic:** `src/simulation/model.py` and `src/simulation/agents/`
 
 ### A. Run a Simulation
 
@@ -29,9 +29,7 @@ Generate ABM data with default parameters:
 
 ```bash
 python -m src.scripts.generate_abm_energy_community
-```
-
----
+````
 
 ### B. Customize Parameters
 
@@ -62,7 +60,7 @@ python -m src.scripts.generate_abm_energy_community \
 
 ---
 
-### 2️⃣ Output Structure
+## 2️⃣ Output Structure
 
 Each run creates a folder named after the seed:
 
@@ -80,16 +78,17 @@ data/abm/
 
 ---
 
-### 3️⃣ Notes
+## 3️⃣ Notes
 
-* Agents are currently **mocked**, meaning behavior logic is minimal.
+* Agents are currently **mocked**, with minimal behavior logic.
 * Future versions will implement realistic decision rules and interactions.
 * CSVs are compatible with downstream notebooks and visualizations.
 
 ---
 
-### 📚 References
+## 📚 References
 
-* See **MonteCarlo Data Generation Guide** for comparisons and data pipeline conventions.
+* See **MonteCarlo Data Generation Guide** for comparisons and pipeline conventions.
 * For initial setup steps, refer to **Getting Started**.
 
+```
