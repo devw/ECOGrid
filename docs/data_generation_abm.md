@@ -20,7 +20,7 @@ All generated data is stored in `data/abm/`.
 
 Data generation involves:
 
-- **Script:** `src/scripts/generate_abm_energy_community.py`  
+- **Script:** `src/scripts/generate_abm.py`  
 - **Logic:** `src/simulation/model.py` and `src/simulation/agents/`
 
 ### A. Run a Simulation
@@ -28,7 +28,7 @@ Data generation involves:
 Generate ABM data with default parameters:
 
 ```bash
-python -m src.scripts.generate_abm_energy_community
+python -m src.scripts.generate_abm
 ````
 
 ### B. Customize Parameters
@@ -36,7 +36,7 @@ python -m src.scripts.generate_abm_energy_community
 You can adjust the number of agents, steps, seed, and output folder. Example:
 
 ```bash
-python -m src.scripts.generate_abm_energy_community \
+python -m src.scripts.generate_abm \
     --n-consumers 10 \
     --n-prosumers 5 \
     --n-grids 1 \
