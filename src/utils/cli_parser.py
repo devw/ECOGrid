@@ -51,6 +51,38 @@ def base_parser(
         help="Path to save the output file"
     )
 
+    # Montecarlo arguments
+    parser.add_argument(
+        "--n-agents",
+        type=int,
+        help="Number of agents per scenario"
+    )
+
+    parser.add_argument(
+        "--n-replications",
+        type=int,
+        help="Number of Monte Carlo replications"
+    )
+
+    parser.add_argument(
+        "--n-bins",
+        type=int,
+        help="Number of bins in the heatmap"
+    )
+
+    parser.add_argument(
+        "--noise-std",
+        type=float,
+        help="Noise standard deviation"
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed"
+    )
+
+
     if defaults:
         parser.set_defaults(**defaults)
 
