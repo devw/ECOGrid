@@ -7,26 +7,15 @@ It generates CSV/JSON outputs to test imports, script execution,
 and pipeline, without implementing real agent behavior.
 """
 
-import argparse
 from pathlib import Path
 import csv
 import json
 
+# Import unified CLI parser
+from src.utils.cli_parser import base_parser
+
 # Import mock model and agents
 from src.simulation.model import SimulationModel
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate mock ABM data for Energy Community."
-    )
-    parser.add_argument("--n-consumers", type=int, default=2, help="Number of Consumer agents")
-    parser.add_argument("--n-prosumers", type=int, default=2, help="Number of Prosumer agents")
-    parser.add_argument("--n-grid-agents", type=int, default=1, help="Number of Grid agents")  # Changed from n-grids
-    parser.add_argument("--n-steps", type=int, default=3, help="Number of simulation steps")
-    parser.add_argument("--output", type=str, default="data/abm", help="Folder to save outputs")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
-    return parser.parse_args()
 
 
 def save_agents_csv(agents_data, file_path):
@@ -35,12 +24,23 @@ def save_agents_csv(agents_data, file_path):
     with open(file_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        for agent in agents_data:  # agent è già un dict
+        for agent in agents_data:  # agent is already a dict
             writer.writerow(agent)
 
 
 def main():
-    args = parse_args()
+    # Define ABM-specific defaults
+    defaults = {
+        "n_consumers": 2,
+        "n_prosumers": 2,
+        "n_grid_agents": 1,
+        "n_steps": 3,
+        "seed": 42,
+        "output": "data/abm"
+    }
+
+    # Parse CLI arguments using unified parser
+    args = base_parser(defaults=defaults).parse_args()
 
     # Create output folder
     output_dir = Path(args.output)
@@ -52,7 +52,7 @@ def main():
     model = SimulationModel(
         n_consumers=args.n_consumers,
         n_prosumers=args.n_prosumers,
-        n_grid_agents=args.n_grid_agents,  # Changed from n_grids
+        n_grid_agents=args.n_grid_agents,
         seed=args.seed
     )
 
@@ -62,7 +62,7 @@ def main():
         model.step()  # does nothing in mock
         step_data = [
             {"agent_id": agent.unique_id, "type": type(agent).__name__}
-            for agent in model.agents  # Changed from model.schedule.agents
+            for agent in model.agents
         ]
         all_steps_data.append({"step": step + 1, "agents": step_data})
 

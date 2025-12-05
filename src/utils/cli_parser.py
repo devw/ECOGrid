@@ -1,15 +1,9 @@
-# src/utils/cli.py
-
 from argparse import ArgumentParser
 from pathlib import Path
 import inspect
 import os
 
 def safe_run(main_func):
-    """
-    Runs a function inside a FileNotFoundError-safe wrapper.
-    Ensures consistent CLI error handling across scripts.
-    """
     try:
         main_func()
     except FileNotFoundError as e:
@@ -17,17 +11,10 @@ def safe_run(main_func):
         print(f"❌ {e}")
         sys.exit(1)
 
-
-
 def base_parser(
     description: str | None = None,
     defaults: dict | None = None
 ) -> ArgumentParser:
-    """
-    Returns a preconfigured ArgumentParser.
-    - description: optional, auto-generated from filename if None
-    - defaults: optional dictionary of default argument values
-    """
 
     if description is None:
         caller_frame = inspect.stack()[1]
@@ -37,6 +24,7 @@ def base_parser(
 
     parser = ArgumentParser(description=description)
 
+    # Parametri comuni
     parser.add_argument(
         "--data-dir",
         type=Path,
@@ -51,6 +39,63 @@ def base_parser(
         help="Path to save the output file"
     )
 
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed"
+    )
+
+    # Parametri Montecarlo
+    parser.add_argument(
+        "--n-agents",
+        type=int,
+        help="Number of agents per scenario (Montecarlo)"
+    )
+
+    parser.add_argument(
+        "--n-replications",
+        type=int,
+        help="Monte Carlo replications (Montecarlo)"
+    )
+
+    parser.add_argument(
+        "--n-bins",
+        type=int,
+        help="Number of bins in the heatmap (Montecarlo)"
+    )
+
+    parser.add_argument(
+        "--noise-std",
+        type=float,
+        help="Noise standard deviation (Montecarlo)"
+    )
+
+    # Parametri ABM
+    parser.add_argument(
+        "--n-consumers",
+        type=int,
+        help="Number of consumer agents (ABM)"
+    )
+
+    parser.add_argument(
+        "--n-prosumers",
+        type=int,
+        help="Number of prosumer agents (ABM)"
+    )
+
+    parser.add_argument(
+        "--n-grid-agents",
+        type=int,
+        help="Number of grid agents (ABM)"
+    )
+
+    parser.add_argument(
+        "--n-steps",
+        type=int,
+        help="Number of simulation steps (ABM)"
+    )
+
+    # Applica eventuali valori di default specifici dello script
     if defaults:
         parser.set_defaults(**defaults)
 
