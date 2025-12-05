@@ -5,6 +5,7 @@ CLI script to generate dummy data for ECOGrid simulation.
 
 from pathlib import Path
 import sys
+import os
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -16,17 +17,28 @@ from src.data.montecarlo_generators.dummy_generator import (
     save_all_data
 )
 
+
 if __name__ == "__main__":
     def run():
-        # Parse arguments with defaults in one line
-        args = base_parser(defaults={
+        # Define defaults for Montecarlo + ABM
+        defaults = {
+            # Montecarlo
             "n_agents": 10000,
             "n_bins": 20,
             "n_replications": 100,
             "noise_std": 0.05,
+            # ABM
+            "n_consumers": 2,
+            "n_prosumers": 2,
+            "n_grid_agents": 1,
+            "n_steps": 3,
+            # Common
             "seed": 42,
             "output": Path("data/dummy")
-        }).parse_args()
+        }
+
+        # Parse arguments using unified CLI parser
+        args = base_parser(defaults=defaults).parse_args()
 
         # Create configuration
         config = GeneratorConfig(
