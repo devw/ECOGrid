@@ -34,12 +34,14 @@ ECOGrid helps answer critical research questions:
 
 | Topic | Focus | File Link |
 | :--- | :--- | :--- |
-| **🚀 Getting Started** | Installation, setup, and first run commands | [🎓 `getting_started.md`](./docs/getting_started.md) |
-| **🏗️ Architecture** | Design principles (SOLID/DRY) and system structure | [🏗️ `architecture.md`](./docs/architecture.md) |
-| **📊 Reports & Viz** | Detailed descriptions of all generated reports (Heatmaps, PRIM Trajectory, Tables) | [🗺️ `visualization_scripts.md`](./docs/visualization_scripts.md) |
-| **🧪 API Reference** | Function and class documentation | [🔍 `api_reference.md`](./docs/api_reference.md) |
-| **📦 MonteCarlo Pipeline** | Guide to generating and validating MonteCarlo datasets | [🎲 `data_generation_montecarlo.md`](./docs/data_generation_montecarlo.md) |
-| **⚙️ Tutorials** | Step-by-step guides for specific usage scenarios | [📖 `tutorial.md`](./docs/tutorial.md) |
+| **🚀 Getting Started** | Installation, setup, and first run commands | [🎓 `GETTING_STARTED.md`](./docs/GETTING_STARTED.md) |
+| **🏗️ Architecture** | Design principles (SOLID/DRY) and system structure | [🏗️ `ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
+| **📦 ABM Data Generation** | Guide to generating Agent-Based Model datasets | [📊 `DATA_GENERATION_ABM.md`](./docs/DATA_GENERATION_ABM.md) |
+| **📦 MonteCarlo Pipeline** | Guide to generating and validating MonteCarlo datasets | [🎲 `DATA_GENERATION_MONTECARLO.md`](./docs/DATA_GENERATION_MONTECARLO.md) |
+| **⚙️ Scripts & Experiments** | Overview of all executable scripts in the project | [🚀 `SCRIPTS.md`](./docs/SCRIPTS.md) |
+| **📊 Reports & Visualization** | Detailed descriptions of all generated reports (Heatmaps, PRIM Trajectory, Tables) | [🗺️ `VISUALIZATION_SCRIPTS.md`](./docs/VISUALIZATION_SCRIPTS.md) |
+| **⚙️ Tutorials** | Step-by-step guides for specific usage scenarios | [📖 `TUTORIAL.md`](./docs/TUTORIAL.md) |
+| **🧪 API Reference** | Function and class documentation | [🔍 `API_REFERENCE.md`](./docs/API_REFERENCE.md) |
 
 ---
 
