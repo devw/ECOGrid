@@ -147,10 +147,16 @@ cython_debug/
 # Project-Specific Data Files
 # -----------------------------------------------------------------------------
 
-# MonteCarlo and Dummy output
-data/montecarlo/
-data/dummy/
+# Data files - ignore all content, keep structure
+data/**/*
 
+# Keep structure files
+!data/.gitkeep
+!data/README.md
+!data/*/
+!data/*/.gitkeep
+!data/*/raw/
+!data/*/raw/.gitkeep
 # Raw data (potentially large or sensitive)
 data/raw/**
 !data/raw/.gitkeep
