@@ -19,7 +19,7 @@ Example with custom parameters:
 python -m src.scripts.generate_abm \
     --n-consumers 10 \
     --n-prosumers 5 \
-    --n-grids 1 \
+    --n-grid-agents 1 \
     --n-steps 50 \
     --seed 1234 \
     --output data/abm_custom

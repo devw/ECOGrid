@@ -39,7 +39,7 @@ You can adjust the number of agents, steps, seed, and output folder. Example:
 python -m src.scripts.generate_abm \
     --n-consumers 10 \
     --n-prosumers 5 \
-    --n-grids 1 \
+    --n-grid-agents 1 \
     --n-steps 50 \
     --seed 1234 \
     --output data/abm_custom
@@ -49,14 +49,14 @@ python -m src.scripts.generate_abm \
 
 ### 🔧 Available CLI Parameters
 
-| Parameter       | Type | Default    | Description                        |
-| --------------- | ---- | ---------- | ---------------------------------- |
-| `--n-consumers` | int  | `2`        | Number of Consumer agents          |
-| `--n-prosumers` | int  | `2`        | Number of Prosumer agents          |
-| `--n-grids`     | int  | `1`        | Number of Grid agents              |
-| `--n-steps`     | int  | `3`        | Number of simulation steps         |
-| `--seed`        | int  | `42`       | Random seed for reproducibility    |
-| `--output`      | Path | `data/abm` | Directory to save CSV/JSON outputs |
+| **Parameter**     | **Type** | **Default** | **Description**                 |
+| ----------------- | -------- | ----------- | ------------------------------- |
+| `--n-consumers`   | int      | `2`         | Number of consumer agents       |
+| `--n-prosumers`   | int      | `2`         | Number of prosumer agents       |
+| `--n-grid-agents` | int      | `1`         | Number of grid agents           |
+| `--n-steps`       | int      | `3`         | Number of simulation steps      |
+| `--seed`          | int      | `42`        | Random seed for reproducibility |
+| `--output`        | Path     | `data/abm`  | Directory for CSV/JSON outputs  |
 
 ---
 
