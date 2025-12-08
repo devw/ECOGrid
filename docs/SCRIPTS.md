@@ -10,19 +10,29 @@ Commands include basic execution and example parameters.
 ### **Generate ABM Data**
 
 ```bash
-python -m src.scripts.generate_abm
+# Using defaults
+python -m src.scripts.generate_abm \
+    --n-consumers 10 \
+    --n-prosumers 5 \
+    --n-grid-agents 1 \
+    --n-steps 5 \
+    --seed 1234 \
+    --output data/abm_custom
 ```
 
 Example with custom parameters:
 
 ```bash
+# With custom scenario and config
 python -m src.scripts.generate_abm \
-    --n-consumers 10 \
-    --n-prosumers 5 \
-    --n-grids 1 \
-    --n-steps 50 \
-    --seed 1234 \
-    --output data/abm_custom
+    --n-consumers 20 \
+    --n-prosumers 10 \
+    --n-grid-agents 2 \
+    --n-steps 10 \
+    --seed 5678 \
+    --scenario high_trust_policy \
+    --config config/high_trust.yaml \
+    --output data/abm_experiments
 ```
 
 ### **Generate Monte Carlo Data**

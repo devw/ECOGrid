@@ -1,0 +1,36 @@
+# ABM Simulation Configuration File
+
+# Trust Evolution Parameters
+trust:
+  initial_min: 0.5      # Minimum initial trust value
+  initial_max: 1.0      # Maximum initial trust value
+  change_min: -0.05     # Minimum trust change per step
+  change_max: 0.05      # Maximum trust change per step
+  min_value: 0.0        # Trust cannot go below this
+  max_value: 1.0        # Trust cannot go above this
+
+# Income Ranges by Agent Type (fixed per agent)
+income:
+  consumer:
+    min: 0
+    max: 20000
+  prosumer:
+    min: 20000
+    max: 50000
+  grid:
+    value: null         # Grid agents don't have income
+
+# Adoption Parameters
+adoption:
+  initial_min: 0.0      # Initial adoption state (0 = not adopted)
+  initial_max: 0.0      # Start with no adoption
+  # Future: add adoption progression rules
+
+# Grid Assignment
+grid:
+  auto_assign: true     # Automatically assign consumers/prosumers to grid agents
+  # If false, grid_id will be null for all agents
+
+# Other Optional Settings
+simulation:
+  random_seed_offset: 0  # Offset for reproducibility in trust/income generation
