@@ -7,6 +7,7 @@ Contains only Pydantic models and enums.
 from typing import List
 from pydantic import BaseModel, Field, validator
 from enum import Enum
+from dataclasses import dataclass
 
 # =============================================================================
 # Enums
@@ -91,6 +92,43 @@ class PRIMTrajectorySchema(BaseModel):
     class Config:
         use_enum_values = True
 
+@dataclass
+class PRIMTrajectoryReplicationSchema:
+    """Individual replication data for PRIM trajectory uncertainty analysis."""
+    scenario: ScenarioType
+    iteration: int
+    replication_id: int
+    coverage: float
+    density: float
+    n_agents: int
+    is_selected: bool
+
+@dataclass
+class PRIMTrajectoryEnhancedSchema:
+    """Enhanced PRIM trajectory with statistical metrics."""
+    scenario: ScenarioType
+    iteration: int
+    coverage_mean: float
+    coverage_std: float
+    coverage_ci_lower: float
+    coverage_ci_upper: float
+    density_mean: float
+    density_std: float
+    density_ci_lower: float
+    density_ci_upper: float
+    n_agents_mean: float
+    is_selected: bool
+    n_replications: int
+
+@dataclass
+class HeatmapReplicationSchema:
+    """Individual replication data for uncertainty analysis."""
+    scenario: ScenarioType
+    trust_bin: float
+    income_bin: float
+    replication_id: int
+    adoption_rate: float
+    n_samples: int
 
 class DemographicProfileSchema(BaseModel):
     scenario: ScenarioType

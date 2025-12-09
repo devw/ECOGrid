@@ -30,8 +30,12 @@ from src.data.schemas import (
     ScenarioType,
     AgentSchema,
     HeatmapGridSchema,
+    HeatmapGridEnhancedSchema,           # ← aggiunto
     PRIMBoxSchema,
     PRIMTrajectorySchema,
+    PRIMTrajectoryEnhancedSchema,        # ← aggiunto
+    PRIMTrajectoryReplicationSchema,     # ← aggiunto
+    HeatmapReplicationSchema,            # ← aggiunto
     DemographicProfileSchema
 )
 from .config import GeneratorConfig
@@ -41,18 +45,6 @@ from src.data.csv_utils import schemas_to_csv
 # NEW: Enhanced Schemas for Statistical Metrics
 # =============================================================================
 
-@dataclass
-class HeatmapGridEnhancedSchema:
-    """Enhanced heatmap grid with statistical metrics."""
-    scenario: ScenarioType
-    trust_bin: float
-    income_bin: float
-    adoption_rate: float  # Mean across replications
-    std_dev: float  # Standard deviation
-    ci_lower: float  # 95% CI lower bound
-    ci_upper: float  # 95% CI upper bound
-    n_replications: int  # Number of Monte Carlo runs
-    n_samples: int  # Sample size per bin per replication
 
 
 # =============================================================================
@@ -589,6 +581,7 @@ def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> 
         output_dir: Directory to save CSV files
         config: Generator configuration (for metadata)
     """
+    from .csv_writer import save_prim_trajectory_summary, save_prim_trajectory_replications
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"\n💾 Saving data to {output_dir.absolute()}")
@@ -622,11 +615,11 @@ def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> 
     
     # NUOVO: Save PRIM trajectory summary
     print("  ├─ Saving prim_trajectory_summary.csv (with CI)...")
-    _save_prim_trajectory_summary(all_trajectories_summary, output_dir / "prim_trajectory_summary.csv")
+    save_prim_trajectory_summary(all_trajectories_summary, output_dir / "prim_trajectory_summary.csv")
     
     # NUOVO: Save PRIM trajectory replications
     print("  ├─ Saving prim_trajectory_raw.csv (all runs)...")
-    _save_prim_trajectory_replications(all_trajectories_reps, output_dir / "prim_trajectory_raw.csv")
+    save_prim_trajectory_replications(all_trajectories_reps, output_dir / "prim_trajectory_raw.csv")
     
     schemas_to_csv(all_profiles, output_dir / "demographic_profiles.csv")
     
@@ -640,56 +633,10 @@ def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> 
 
 
 
-def _save_prim_trajectory_summary(data: List[PRIMTrajectoryEnhancedSchema], filepath: Path):
-    """Save PRIM trajectory summary with statistics."""
-    import csv
-    
-    with open(filepath, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'scenario', 'iteration', 
-            'coverage_mean', 'coverage_std', 'coverage_ci_lower', 'coverage_ci_upper',
-            'density_mean', 'density_std', 'density_ci_lower', 'density_ci_upper',
-            'n_agents_mean', 'is_selected', 'n_replications'
-        ])
-        for item in data:
-            writer.writerow([
-                item.scenario.value,
-                item.iteration,
-                item.coverage_mean,
-                item.coverage_std,
-                item.coverage_ci_lower,
-                item.coverage_ci_upper,
-                item.density_mean,
-                item.density_std,
-                item.density_ci_lower,
-                item.density_ci_upper,
-                item.n_agents_mean,
-                item.is_selected,
-                item.n_replications
-            ])
 
 
-def _save_prim_trajectory_replications(data: List[PRIMTrajectoryReplicationSchema], filepath: Path):
-    """Save all PRIM trajectory replications."""
-    import csv
-    
-    with open(filepath, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'scenario', 'iteration', 'replication_id',
-            'coverage', 'density', 'n_agents', 'is_selected'
-        ])
-        for item in data:
-            writer.writerow([
-                item.scenario.value,
-                item.iteration,
-                item.replication_id,
-                item.coverage,
-                item.density,
-                item.n_agents,
-                item.is_selected
-            ])
+
+
 # =============================================================================
 # Main Execution
 # =============================================================================
