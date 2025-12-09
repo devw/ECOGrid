@@ -15,6 +15,7 @@ class ScenarioType(str, Enum):
     NO_INCENTIVE = "NI"
     SERVICES_INCENTIVE = "SI"
     ECONOMIC_INCENTIVE = "EI"
+    MUNICIPAL_TOKENS = "MUNICIPAL_TOKENS"
 
 
 class AgentSchema(BaseModel):

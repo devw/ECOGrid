@@ -1,0 +1,42 @@
+# config/montecarlo_data.yaml
+
+# CONFIGURAZIONE GENERALE DELLA SIMULAZIONE MONTE CARLO
+simulation_config:
+  n_agents: 10000
+  n_bins: 20
+  n_replications: 100
+  noise_std: 0.05
+  n_prim_iterations: 15
+
+# COEFFICIENTI DI ADOZIONE CALIBRATI
+# Questi valori sono stati calcolati per allineare i risultati del Monte Carlo
+# con le percentuali di adozione attese (Passo 5).
+adoption_coefficients:
+  
+  NO_INCENTIVE:
+    base: 0.05
+    trust: 0.10
+    income_pos: 0.25
+    income_neg: 0.0
+    income_power: 2.0
+  
+  ECONOMIC_INCENTIVE:
+    base: 0.10
+    trust: 0.20
+    income_pos: 0.0
+    income_neg: 0.15
+    income_power: 1.0
+
+  SERVICES_INCENTIVE: # Service Tokens (Essential)
+    base: 0.20
+    trust: 0.20
+    income_pos: 0.0
+    income_neg: 0.0
+    income_power: 1.0
+
+  MUNICIPAL_TOKENS: # Service Tokens (Municipal)
+    base: 0.15
+    trust: 0.15
+    income_pos: 0.40
+    income_neg: 0.0
+    income_power: 2.0
