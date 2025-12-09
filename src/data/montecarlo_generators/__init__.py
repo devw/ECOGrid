@@ -15,9 +15,6 @@ from src.data.montecarlo_generators.calibrated_generator import (
     generate_scenario_data,
     generate_all_scenarios,
     save_all_data,
-    calculate_adoption_no_incentive,
-    calculate_adoption_services_incentive,
-    calculate_adoption_economic_incentive,
     get_adoption_function,
 )
 
