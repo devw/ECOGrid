@@ -5,7 +5,7 @@ This package contains modules for generating synthetic data for testing,
 visualization development, and analysis validation.
 """
 
-from src.data.montecarlo_generators.dummy_generator import (
+from src.data.montecarlo_generators.calibrated_generator import (
     GeneratorConfig,
     generate_agents,
     generate_heatmap_grid,
