@@ -107,3 +107,10 @@ class DemographicProfileSchema(BaseModel):
 
     class Config:
         use_enum_values = True
+
+class HeatmapGridEnhancedSchema(HeatmapGridSchema):
+    """Aggregated heatmap grid with statistics."""
+    std_dev: float
+    ci_lower: float
+    ci_upper: float
+    n_replications: int

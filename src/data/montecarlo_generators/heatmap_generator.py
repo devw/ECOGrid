@@ -10,7 +10,7 @@ from scipy import stats
 from src.data.schemas import (
     ScenarioType,
     HeatmapGridSchema,
-    HeatmapGridSchema
+    HeatmapGridEnhancedSchema
 )
 from src.data.montecarlo_generators.adoption_functions import get_adoption_function
 
@@ -75,11 +75,15 @@ def aggregate_replications_to_grid(
             scale=stats.sem(rates_array)
         )
 
-    grid_data.append(HeatmapGridSchema(
+    grid_data.append(HeatmapGridEnhancedSchema(
         scenario=scenario,
         trust_bin=trust,
         income_bin=income,
         adoption_rate=mean_rate,
+        std_dev=std_dev,
+        ci_lower=ci[0],
+        ci_upper=ci[1],
+        n_replications=n_reps,
         n_samples=500
     ))
 
