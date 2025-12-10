@@ -7,12 +7,6 @@ visualization development, and analysis validation.
 
 from src.data.montecarlo_generators.calibrated_generator import (
     GeneratorConfig,
-    generate_agents,
-    generate_heatmap_grid,
-    generate_prim_boxes,
-    generate_prim_trajectory,
-    generate_demographic_profiles,
-    generate_scenario_data,
     generate_all_scenarios,
     save_all_data,
 )
@@ -21,8 +15,6 @@ __all__ = [
     'GeneratorConfig',
     'generate_agents',
     'generate_heatmap_grid',
-    'generate_prim_boxes',
-    'generate_prim_trajectory',
     'generate_demographic_profiles',
     'generate_scenario_data',
     'generate_all_scenarios',
