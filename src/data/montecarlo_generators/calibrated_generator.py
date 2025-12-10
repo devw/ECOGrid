@@ -25,12 +25,7 @@ if __name__ == "__main__":
     project_root = Path(__file__).parent.parent.parent.parent
     sys.path.insert(0, str(project_root))
 
-from src.data.schemas import (
-    ScenarioType,
-    AgentSchema,
-    PRIMBoxSchema,
-    DemographicProfileSchema
-)
+from src.data.schemas import ScenarioType
 from .config import GeneratorConfig
 from src.data.csv_utils import schemas_to_csv
 
@@ -77,101 +72,12 @@ class HeatmapReplicationSchema:
     adoption_rate: float
     n_samples: int
 
-# =============================================================================
-# Agent Generation
-# =============================================================================
-
-def generate_agents(
-    scenario: ScenarioType,
-    n_agents: int,
-    random_state: np.random.RandomState
-) -> List[AgentSchema]:
-    """
-    Generate individual agent data with trust and income attributes.
-    
-    Args:
-        scenario: Policy scenario
-        n_agents: Number of agents to generate
-        random_state: Random state for reproducibility
-        
-    Returns:
-        List of validated agent schemas
-    """
-    agents = []
-    
-    for agent_id in range(n_agents):
-        # Generate trust and income from realistic distributions
-        trust = random_state.beta(2, 2)  # Beta distribution centered around 0.5
-        income = random_state.lognormal(mean=3.5, sigma=0.6)  # Log-normal income
-        income = np.clip(income, 0.0, 100.0)
-        
-        agents.append(AgentSchema(
-            agent_id=agent_id,
-            trust=trust,
-            income=income,
-            scenario=scenario
-        ))
-    
-    return agents
-
+from .agent_generator import generate_agents
 from .heatmap_generator import generate_heatmap_grid
 from .prim_box_generator import generate_prim_boxes
 from .prim_trajectory_generator import generate_prim_trajectory
 from .demographic_generator import generate_demographic_profiles
-
-# =============================================================================
-# NEW: Scale Metadata Generation
-# =============================================================================
-
-def generate_scale_metadata(config: GeneratorConfig) -> Dict:
-    """
-    Generate metadata describing the scales used in the simulation.
-    
-    Args:
-        config: Generator configuration
-        
-    Returns:
-        Dictionary with scale documentation
-    """
-    metadata = {
-        "trust": {
-            "original_range": [0.0, 1.0],
-            "unit": "normalized_trust_score",
-            "binning_method": "uniform",
-            "n_bins": config.n_bins,
-            "bin_centers": np.linspace(0.025, 0.975, config.n_bins).tolist(),
-            "interpretation": "Agent trust propensity score (0=no trust, 1=full trust)",
-            "distribution": "Beta(2, 2) - centered around 0.5 with moderate spread"
-        },
-        "income": {
-            "original_range": [0.0, 100.0],
-            "unit": "income_percentile",
-            "binning_method": "uniform",
-            "n_bins": config.n_bins,
-            "bin_centers": np.linspace(2.5, 97.5, config.n_bins).tolist(),
-            "interpretation": "Income percentile in population (0=lowest, 100=highest)",
-            "distribution": "LogNormal(μ=3.5, σ=0.6) clipped to [0, 100]"
-        },
-        "adoption_rate": {
-            "range": [0.0, 1.0],
-            "unit": "probability",
-            "interpretation": "Proportion of agents adopting green energy technology",
-            "uncertainty_quantification": {
-                "n_replications": config.n_replications,
-                "noise_std": config.noise_std,
-                "confidence_level": 0.95
-            }
-        },
-        "generation_metadata": {
-            "random_seed": config.random_seed,
-            "n_agents": config.n_agents,
-            "timestamp": "auto-generated",
-            "version": "2.0-enhanced"
-        }
-    }
-    
-    return metadata
-
+from .metadata_generator import generate_scale_metadata
 
 # =============================================================================
 # Orchestration Functions
