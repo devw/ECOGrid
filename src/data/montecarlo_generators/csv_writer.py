@@ -1,15 +1,29 @@
-"""CSV writing utilities for PRIM trajectory data."""
+"""
+CSV writing utilities for Monte Carlo simulation data.
+
+This module handles all CSV and JSON file output operations for
+the agent-based energy transition model.
+"""
 
 import csv
+import json
 from pathlib import Path
 from typing import List
-from src.data.schemas import PRIMTrajectoryReplicationSchema, PRIMTrajectoryEnhancedSchema  # (gli schemas necessari)
+
+from src.data.schemas import (
+    PRIMTrajectoryEnhancedSchema,
+    PRIMTrajectoryReplicationSchema
+)
+from src.data.csv_utils import schemas_to_csv
+from .config import GeneratorConfig
+from .metadata_generator import generate_scale_metadata
 
 
-def save_prim_trajectory_summary(data: List[PRIMTrajectoryEnhancedSchema], filepath: Path):
+def save_prim_trajectory_summary(
+    data: List[PRIMTrajectoryEnhancedSchema], 
+    filepath: Path
+) -> None:
     """Save PRIM trajectory summary with statistics."""
-    import csv
-    
     with open(filepath, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -36,10 +50,11 @@ def save_prim_trajectory_summary(data: List[PRIMTrajectoryEnhancedSchema], filep
             ])
 
 
-def save_prim_trajectory_replications(data: List[PRIMTrajectoryReplicationSchema], filepath: Path):
+def save_prim_trajectory_replications(
+    data: List[PRIMTrajectoryReplicationSchema], 
+    filepath: Path
+) -> None:
     """Save all PRIM trajectory replications."""
-    import csv
-    
     with open(filepath, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -56,3 +71,62 @@ def save_prim_trajectory_replications(data: List[PRIMTrajectoryReplicationSchema
                 item.n_agents,
                 item.is_selected
             ])
+
+
+def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> None:
+    """
+    Save all generated data to CSV files.
+    
+    Args:
+        all_data: Dictionary with all scenario data
+        output_dir: Directory to save CSV files
+        config: Generator configuration (for metadata)
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"\n💾 Saving data to {output_dir.absolute()}")
+    
+    # Aggregate data across scenarios
+    all_heatmaps = []
+    all_heatmap_reps = []
+    all_prim_boxes = []
+    all_trajectories_summary = []
+    all_trajectories_reps = []
+    all_profiles = []
+    
+    for scenario_name, data in all_data.items():
+        all_heatmaps.extend(data['heatmap_grid'])
+        all_heatmap_reps.extend(data['heatmap_replications'])
+        all_prim_boxes.extend(data['prim_boxes'])
+        all_trajectories_summary.extend(data['prim_trajectory_summary'])
+        all_trajectories_reps.extend(data['prim_trajectory_replications'])
+        all_profiles.extend(data['demographic_profiles'])
+    
+    # Save aggregated heatmap (with statistics)
+    print("  ├─ Saving heatmap_grid.csv (with CI)...")
+    schemas_to_csv(all_heatmaps, output_dir / "heatmap_grid.csv")
+    
+    # Save disaggregated replications
+    print("  ├─ Saving heatmap_replications.csv (all runs)...")
+    schemas_to_csv(all_heatmap_reps, output_dir / "heatmap_replications.csv")
+    
+    # Save other files
+    schemas_to_csv(all_prim_boxes, output_dir / "prim_boxes.csv")
+    
+    # Save PRIM trajectory summary
+    print("  ├─ Saving prim_trajectory_summary.csv (with CI)...")
+    save_prim_trajectory_summary(all_trajectories_summary, output_dir / "prim_trajectory_summary.csv")
+    
+    # Save PRIM trajectory replications
+    print("  ├─ Saving prim_trajectory_raw.csv (all runs)...")
+    save_prim_trajectory_replications(all_trajectories_reps, output_dir / "prim_trajectory_raw.csv")
+    
+    schemas_to_csv(all_profiles, output_dir / "demographic_profiles.csv")
+    
+    # Save scale metadata
+    print("  └─ Saving scale_metadata.json...")
+    metadata = generate_scale_metadata(config)
+    with open(output_dir / "scale_metadata.json", 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    print("✅ All data saved successfully!")

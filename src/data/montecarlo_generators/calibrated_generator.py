@@ -74,65 +74,7 @@ class HeatmapReplicationSchema:
 
 from .metadata_generator import generate_scale_metadata
 from .orchestrator import generate_all_scenarios
-
-def save_all_data(all_data: dict, output_dir: Path, config: GeneratorConfig) -> None:
-    """
-    Save all generated data to CSV files.
-    
-    Args:
-        all_data: Dictionary with all scenario data
-        output_dir: Directory to save CSV files
-        config: Generator configuration (for metadata)
-    """
-    from .csv_writer import save_prim_trajectory_summary, save_prim_trajectory_replications
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    print(f"\n💾 Saving data to {output_dir.absolute()}")
-    
-    # Aggregate data across scenarios
-    all_heatmaps = []
-    all_heatmap_reps = []
-    all_prim_boxes = []
-    all_trajectories_summary = []  # MODIFICATO
-    all_trajectories_reps = []  # NUOVO
-    all_profiles = []
-    
-    for scenario_name, data in all_data.items():
-        all_heatmaps.extend(data['heatmap_grid'])
-        all_heatmap_reps.extend(data['heatmap_replications'])
-        all_prim_boxes.extend(data['prim_boxes'])
-        all_trajectories_summary.extend(data['prim_trajectory_summary'])  # MODIFICATO
-        all_trajectories_reps.extend(data['prim_trajectory_replications'])  # NUOVO
-        all_profiles.extend(data['demographic_profiles'])
-    
-    # Save aggregated heatmap (with statistics)
-    print("  ├─ Saving heatmap_grid.csv (with CI)...")
-    schemas_to_csv(all_heatmaps, output_dir / "heatmap_grid.csv")
-    
-    # Save disaggregated replications
-    print("  ├─ Saving heatmap_replications.csv (all runs)...")
-    schemas_to_csv(all_heatmap_reps, output_dir / "heatmap_replications.csv")
-    
-    # Save other files
-    schemas_to_csv(all_prim_boxes, output_dir / "prim_boxes.csv")
-    
-    # NUOVO: Save PRIM trajectory summary
-    print("  ├─ Saving prim_trajectory_summary.csv (with CI)...")
-    save_prim_trajectory_summary(all_trajectories_summary, output_dir / "prim_trajectory_summary.csv")
-    
-    # NUOVO: Save PRIM trajectory replications
-    print("  ├─ Saving prim_trajectory_raw.csv (all runs)...")
-    save_prim_trajectory_replications(all_trajectories_reps, output_dir / "prim_trajectory_raw.csv")
-    
-    schemas_to_csv(all_profiles, output_dir / "demographic_profiles.csv")
-    
-    # Save scale metadata
-    print("  └─ Saving scale_metadata.json...")
-    metadata = generate_scale_metadata(config)
-    with open(output_dir / "scale_metadata.json", 'w') as f:
-        json.dump(metadata, f, indent=2)
-    
-    print("✅ All data saved successfully!")
+from .csv_writer import save_all_data
 
 # =============================================================================
 # Main Execution
