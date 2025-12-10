@@ -94,13 +94,13 @@ python -m src.visualization.<script_name>
 ### **Adoption Heatmap**
 
 ```bash
-python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo --output /tmp/adoption_montecarlo.png
+python -m src.visualization.adoption_heatmap_generator --data-dir data/custom_low_noise/ --output /tmp/adoption_montecarlo.png
 ```
 
 ### **PRIM Trajectory**
 
 ```bash
-python -m src.visualization.prim_trajectory --data-dir data/montecarlo --output /tmp/prim_trajectory.png
+python -m src.visualization.prim_trajectory --data-dir data/custom_low_noise/ --output /tmp/prim_trajectory.png
 ```
 
 ### **Demographic Table**

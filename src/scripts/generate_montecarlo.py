@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.utils.cli_parser import base_parser, safe_run
-from src.data.montecarlo_generators.dummy_generator import (
+from src.data.montecarlo_generators.calibrated_generator import (
     GeneratorConfig,
     generate_all_scenarios,
     save_all_data
