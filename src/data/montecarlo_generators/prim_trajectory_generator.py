@@ -15,7 +15,7 @@ from src.data.schemas import (
     PRIMTrajectoryReplicationSchema,
     PRIMTrajectoryEnhancedSchema
 )
-from src.utils.stats_utils import aggregate_replications
+from src.utils.montecarlo_stats import aggregate_replications
 
 
 def generate_prim_trajectory_replications(
