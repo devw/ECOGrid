@@ -15,7 +15,6 @@ from src.data.montecarlo_generators.calibrated_generator import (
     generate_scenario_data,
     generate_all_scenarios,
     save_all_data,
-    get_adoption_function,
 )
 
 __all__ = [
