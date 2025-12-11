@@ -94,7 +94,7 @@ python -m src.visualization.<script_name>
 ### **Adoption Heatmap**
 
 ```bash
-python -m src.visualization.adoption_heatmap_generator --data-dir data/custom_low_noise/ --output /tmp/adoption_montecarlo.png
+python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo_calibrated_fixed --output /tmp/adoption_montecarlo.png
 ```
 
 ### **PRIM Trajectory**
