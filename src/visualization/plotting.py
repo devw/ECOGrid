@@ -76,8 +76,6 @@ class HeatmapPlotter:
         ax.set_xticklabels([f"{trust[i]:.2f}" for i in xt], fontsize=FONTSIZE_AXES_TICKS)
         ax.set_yticklabels([f"{income[i]:.0f}" for i in yt], fontsize=FONTSIZE_AXES_TICKS)
 
-        # Uniformed statistical notation for standard deviation ($\sigma$)
-        ax.text(0.02, 0.98, f"Avg $\\sigma$={np.mean(grid['std_dev']):.3f}", transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color='white',
+        ax.text(0.02, 0.98, f"Avg $\\alpha$={grid['avg_adoption']:.1%}", transform=ax.transAxes, fontsize=FONTSIZE_TEXT_SMALL, color='white',
                 ha='left', va='top', bbox=dict(boxstyle='round', facecolor='black', alpha=0.5), zorder=11)
-
         return im
