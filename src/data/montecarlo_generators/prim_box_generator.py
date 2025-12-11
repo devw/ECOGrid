@@ -37,10 +37,10 @@ def identify_prim_box(
     if scenario == ScenarioType.SERVICES_INCENTIVE:
         # SI: High trust segment (narrow, high density)
         trust_min, trust_max = 0.65, 1.0
-        income_min, income_max = 0.0, 100.0
-        coverage = 0.06  # 6% of population
-        density = 0.81   # 81% adoption in segment
-        lift = 2.5
+        income_min, income_max = 77.5, 100.0  # Top ~23% income
+        coverage = 0.067  # 6.7% of population (empirical)
+        density = 0.263   # 26.3% of high-adoption cases in box
+        lift = 2.39       # 2.39x above average adoption
         
     elif scenario == ScenarioType.ECONOMIC_INCENTIVE:
         # EI: High trust + moderate income (broader segment)
