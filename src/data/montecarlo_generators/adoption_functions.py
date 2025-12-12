@@ -1,22 +1,3 @@
-"""
-CALIBRATED adoption functions aligned with research data.
-
-Target adoption rates by income bracket:
-- No Incentive (NI): Low 8-15%, Mid 15-22%, High 20-28%
-- Economic Incentive (EI): Low 30-40%, Mid 28-38%, High 30-42%  
-- Service Tokens (SI): Low 12-20%, Mid 18-28%, High 35-48%
-
-Income mapping (percentiles):
-- Low: 0-30 (€0-20K)
-- Mid: 30-70 (€20-50K)
-- High: 70-100 (€50-100K)
-
-VALIDATION RESULTS:
-- NI: Low 12.9%, Mid 20.2%, High 27.0% ✅
-- SI: Low 16.3%, Mid 19.2%, High 35.4% ✅
-- EI: Low 38.6%, Mid 37.5%, High 38.6% ✅
-"""
-
 from typing import Callable
 import numpy as np
 from src.data.schemas import ScenarioType
