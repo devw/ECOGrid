@@ -10,6 +10,7 @@ from src.data.montecarlo_generators.calibrated_generator import (
     GeneratorConfig, generate_all_scenarios, save_all_data
 )
 
+
 def run():
     args = base_parser(defaults={
         "n_agents": 10000,
@@ -35,14 +36,7 @@ def run():
     data = generate_all_scenarios(config)
     files = save_all_data(data, config.output_dir, config)
 
-    show_summary({name: config.output_dir / name for name in [
-        "heatmap_grid.csv",
-        "heatmap_replications.csv",
-        "prim_boxes.csv",
-        "prim_trajectory.csv",
-        "demographic_profiles.csv",
-        "scale_metadata.json"
-    ]})
+    show_summary(files)
 
 
 if __name__ == "__main__":
