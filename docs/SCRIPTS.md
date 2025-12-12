@@ -100,7 +100,7 @@ python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarl
 ### **PRIM Trajectory**
 
 ```bash
-python -m src.visualization.prim_trajectory --data-dir data/custom_low_noise/ --output /tmp/prim_trajectory.png
+python -m src.visualization.prim_trajectory --data-dir data/montecarlo_calibrated_fixed --output /tmp/prim_trajectory.png
 ```
 
 ### **Demographic Table**
