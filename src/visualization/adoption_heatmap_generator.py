@@ -13,6 +13,75 @@ from ._processors.data_utils import scenario_grid
 from ._processors.stats_utils import compute_pairwise_significance
 from .plotting import HeatmapPlotter
 from ._utils.file_utils import load_csv_or_fail
+from ._processors.report_generator import print_analysis_report
+
+
+def print_analysis_report(grids: dict, scenarios: dict):
+    """Print textual analysis of adoption rates and PRIM boxes."""
+    
+    print("\n" + "="*80)
+    print("📊 ADOPTION RATE & PRIM BOX ANALYSIS REPORT")
+    print("="*80 + "\n")
+    
+    for code, title in scenarios.items():
+        grid = grids[code]
+        prim = grid.get('prim')
+        
+        print(f"{'─'*80}")
+        print(f"📌 {title.upper()}")
+        print(f"{'─'*80}")
+        
+        # Adoption rate statistics
+        adoption_data = grid['adoption'].flatten()
+        print(f"\n  📈 Adoption Rate Statistics:")
+        print(f"     • Average (α):  {grid['avg_adoption']:.1%}")
+        print(f"     • Minimum:      {adoption_data.min():.1%}")
+        print(f"     • Maximum:      {adoption_data.max():.1%}")
+        print(f"     • Std Dev (σ):  {adoption_data.std():.3f}")
+        print(f"     • Replications: {grid['n_replications']:,}")
+        
+        # PRIM Box analysis
+        if prim is not None:
+            print(f"\n  🎯 PRIM Box (High-Adoption Region):")
+            print(f"     • Coverage:  {prim['coverage']:.1%} of population")
+            print(f"     • Density:   {prim['density']:.1%} of high-adoption cases")
+            print(f"     • Lift:      {prim['lift']:.2f}x above average")
+            
+            # Calculate estimated adoption in PRIM box
+            estimated_adoption = grid['avg_adoption'] * prim['lift']
+            print(f"     • Est. adoption in box: ~{estimated_adoption:.1%}")
+            
+            # Box boundaries
+            print(f"\n  📦 Box Boundaries:")
+            print(f"     • Trust:  [{prim['trust_min']:.3f}, {prim['trust_max']:.3f}]")
+            print(f"     • Income: [{prim['income_min']:.1f}, {prim['income_max']:.1f}]")
+            
+            # Interpretation
+            print(f"\n  💡 Interpretation:")
+            if prim['coverage'] < 0.15:
+                reach = "Very limited reach (elite only)"
+            elif prim['coverage'] < 0.30:
+                reach = "Limited reach (excludes majority)"
+            elif prim['coverage'] < 0.50:
+                reach = "Moderate reach (covers minority)"
+            else:
+                reach = "Good reach (covers majority)"
+            print(f"     • Population reach: {reach}")
+            
+            if prim['lift'] > 2.0:
+                effectiveness = "Highly effective in target region"
+            elif prim['lift'] > 1.5:
+                effectiveness = "Moderately effective in target region"
+            else:
+                effectiveness = "Modest effectiveness in target region"
+            print(f"     • Effectiveness: {effectiveness}")
+        else:
+            print(f"\n  ⚠️  No PRIM box identified (low variance in adoption)")
+        
+        print()  # Empty line between scenarios
+    
+    print("="*80 + "\n")
+
 
 def plot_all(output: Path, data_dir: Path):
     """Orchestrates heatmap generation: load data, analyze, and plot."""
@@ -42,6 +111,10 @@ def plot_all(output: Path, data_dir: Path):
     for s in SCENARIOS:
         p = prim_df[prim_df["scenario"] == s]
         grids[s]['prim'] = p.iloc[0] if not p.empty else None
+
+    # 3.5 PRINT ANALYSIS REPORT
+    print_analysis_report(grids, SCENARIOS)
+
 
     # 4. PLOTTING
     fig = plt.figure(figsize=(10, 16))

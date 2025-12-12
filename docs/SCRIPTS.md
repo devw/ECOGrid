@@ -46,11 +46,11 @@ Example with custom parameters:
 ```bash
 python -m src.scripts.generate_montecarlo \
     --n-agents 5000 \
-    --n-replications 300 \
+    --n-replications 100 \
     --n-bins 15 \
     --noise-std 0.03 \
     --seed 1234 \
-    --output data/custom_low_noise
+    --output data/montecarlo_calibrated_fixed
 ```
 
 ### **Generate Dummy Data**
@@ -84,7 +84,7 @@ python -m src.experiments.run_sensitivity
 ---
 
 ## 3️⃣ Visualization Scripts
-
+ 
 > All visualization scripts must be run as **Python modules from project root**:
 
 ```bash
@@ -94,7 +94,7 @@ python -m src.visualization.<script_name>
 ### **Adoption Heatmap**
 
 ```bash
-python -m src.visualization.adoption_heatmap_generator --data-dir data/custom_low_noise/ --output /tmp/adoption_montecarlo.png
+python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo_calibrated_fixed --output /tmp/adoption_montecarlo.png
 ```
 
 ### **PRIM Trajectory**

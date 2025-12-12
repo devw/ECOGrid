@@ -35,10 +35,14 @@ def generate_agents(
         income = random_state.lognormal(mean=3.5, sigma=0.6)  # Log-normal income
         income = np.clip(income, 0.0, 100.0)
         
+        # Generate environmental concern (Beta distribution, slightly higher mean)
+        environmental_concern = random_state.beta(2.5, 2)  # Slightly skewed toward higher concern
+        
         agents.append(AgentSchema(
             agent_id=agent_id,
             trust=trust,
             income=income,
+            environmental_concern=environmental_concern,  # ← AGGIUNTO
             scenario=scenario
         ))
     

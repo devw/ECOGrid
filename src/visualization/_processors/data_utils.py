@@ -34,4 +34,5 @@ def scenario_grid(df: pd.DataFrame, scenario: str) -> dict:
         "ci_lower": _pivot_grid(sub, "ci_lower"),
         "ci_upper": _pivot_grid(sub, "ci_upper"),
         "n_replications": int(sub["n_replications"].iloc[0]) if "n_replications" in sub.columns else None,
+        "avg_adoption": sub["adoption_rate"].mean(), 
     }

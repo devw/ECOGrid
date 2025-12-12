@@ -27,6 +27,7 @@ class AgentSchema(BaseModel):
     trust: float
     income: float
     scenario: ScenarioType
+    environmental_concern: float
 
     class Config:
         use_enum_values = True
