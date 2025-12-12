@@ -1,59 +1,31 @@
-# 📝 SCRIPTS GUIDE
+# 📝 ECOGrid Scripts Guide
 
-This document lists all executable scripts in the ECOGrid project.
-Commands include basic execution and example parameters.
+Executable scripts in the ECOGrid project. Run from project root as Python modules.
 
 ---
 
-## 1️⃣ Data Generation Scripts
+## 1️⃣ Data Generation
 
-### **Generate ABM Data**
-
-```bash
-# Using defaults
-python -m src.scripts.generate_abm \
-    --n-consumers 10 \
-    --n-prosumers 5 \
-    --n-grid-agents 1 \
-    --n-steps 5 \
-    --seed 1234 \
-    --output data/abm_custom
-```
-
-Example with custom parameters:
+### **ABM Data**
 
 ```bash
-# With custom scenario and config
-python -m src.scripts.generate_abm \
-    --n-consumers 20 \
-    --n-prosumers 10 \
-    --n-grid-agents 2 \
-    --n-steps 10 \
-    --seed 5678 \
-    --scenario high_trust_policy \
-    --config config/high_trust.yaml \
-    --output data/abm_experiments
-```
+# Default
+python -m src.scripts.generate_abm --n-consumers 10 --n-prosumers 5 --n-grid-agents 1 --n-steps 5 --seed 1234 --output data/abm_custom
 
-### **Generate Monte Carlo Data**
+# Custom scenario
+python -m src.scripts.generate_abm --n-consumers 20 --n-prosumers 10 --n-grid-agents 2 --n-steps 10 --seed 5678 --scenario high_trust_policy --config config/high_trust.yaml --output data/abm_experiments
+````
+
+### **Monte Carlo Data**
 
 ```bash
 python -m src.scripts.generate_montecarlo
+
+# Custom
+python -m src.scripts.generate_montecarlo --n-agents 5000 --n-replications 100 --n-bins 15 --noise-std 0.03 --seed 1234 --output data/montecarlo_calibrated_fixed
 ```
 
-Example with custom parameters:
-
-```bash
-python -m src.scripts.generate_montecarlo \
-    --n-agents 5000 \
-    --n-replications 100 \
-    --n-bins 15 \
-    --noise-std 0.03 \
-    --seed 1234 \
-    --output data/montecarlo_calibrated_fixed
-```
-
-### **Generate Dummy Data**
+### **Dummy Data**
 
 ```bash
 python -m src.scripts.generate_dummy
@@ -61,51 +33,51 @@ python -m src.scripts.generate_dummy
 
 ---
 
-## 2️⃣ Experiment Scripts
-
-### **Run Baseline Experiment**
+## 2️⃣ Experiments
 
 ```bash
 python -m src.experiments.run_baseline
-```
-
-### **Run Scenarios Experiment**
-
-```bash
 python -m src.experiments.run_scenarios
-```
-
-### **Run Sensitivity Analysis**
-
-```bash
 python -m src.experiments.run_sensitivity
 ```
 
 ---
 
-## 3️⃣ Visualization Scripts
- 
-> All visualization scripts must be run as **Python modules from project root**:
+## 3️⃣ Analysis
+
+### **CSV Validation & Summary**
 
 ```bash
+python src/analysis/csv_validation_analysis.py
+```
+
+Sample output:
+
+```
+─────────────────────────────
+📋 SECTION 5: SUMMARY TABLE
+─────────────────────────────
+Scenario             Avg Align    Target OK    LIFT       Overall
+───────────────────────────────────────────────────────────────
+No Incentive         ❌            ✅            ✅ 1.69x   ✅ Good
+Services Incentive   ✅            ✅            ⭐ 2.68x   ✅ Good
+Economic Incentive   ❌            ✅            ⚠️ 1.30x   ⚠️ Partial
+```
+
+---
+
+## 4️⃣ Visualization
+
+```bash
+# Run as Python modules from root
 python -m src.visualization.<script_name>
 ```
 
-### **Adoption Heatmap**
+Examples:
 
 ```bash
 python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo_calibrated_fixed --output /tmp/adoption_montecarlo.png
-```
-
-### **PRIM Trajectory**
-
-```bash
-python -m src.visualization.prim_trajectory --data-dir data/custom_low_noise/ --output /tmp/prim_trajectory.png
-```
-
-### **Demographic Table**
-
-```bash
+python -m src.visualization.prim_trajectory --data-dir data/montecarlo_calibrated_fixed --output /tmp/prim_trajectory.png
 python -m src.visualization.demographic_table --data-dir data/montecarlo --output /tmp/demographic_profiles.md
 ```
 
@@ -113,5 +85,6 @@ python -m src.visualization.demographic_table --data-dir data/montecarlo --outpu
 
 ## 💾 Output
 
-* Default outputs are saved to `/tmp/` or the folder specified with `--output`.
-* ABM and Monte Carlo simulation outputs can be used as input for visualization scripts.
+* Default outputs saved to `/tmp/` or folder specified with `--output`.
+* ABM and Monte Carlo outputs can feed visualization scripts.
+
