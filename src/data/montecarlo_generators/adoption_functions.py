@@ -4,14 +4,6 @@ from src.data.schemas import ScenarioType
 
 
 def calculate_adoption_no_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    """
-    No Incentive: Income effect stronger, trust moderate.
-    
-    Validated results:
-    - Low income (0-30p): 12.9% ✅ (target: 8-15%)
-    - Mid income (30-70p): 20.2% ✅ (target: 15-22%)
-    - High income (70-100p): 27.0% ✅ (target: 20-28%)
-    """
     base_rate = 0.05
     income_effect = 0.20 * (income / 100.0)
     trust_effect = 0.10 * trust
@@ -21,17 +13,6 @@ def calculate_adoption_no_incentive(trust: float, income: float, noise: float = 
 
 
 def calculate_adoption_services_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    """
-    Services Incentive: Strong trust effect, aggressive boost for high income.
-    
-    Validated results:
-    - Low income (0-30p): 16.3% ✅ (target: 12-20%)
-    - Mid income (30-70p): 19.2% ✅ (target: 18-28%)
-    - High income (70-100p): 35.4% ✅ (target: 35-48%)
-    
-    Key insight: High-income households benefit disproportionately from service tokens
-    due to higher engagement with municipal services and digital platforms.
-    """
     base_rate = 0.08
     trust_effect = 0.22 * (trust ** 1.8)
     
@@ -49,17 +30,6 @@ def calculate_adoption_services_incentive(trust: float, income: float, noise: fl
 
 
 def calculate_adoption_economic_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    """
-    Economic Incentive: High baseline, relatively flat across income.
-    
-    Validated results:
-    - Low income (0-30p): 38.6% ✅ (target: 30-40%)
-    - Mid income (30-70p): 37.5% ✅ (target: 28-38%)
-    - High income (70-100p): 38.6% ✅ (target: 30-42%)
-    
-    Key insight: Strong economic incentive equalizes adoption across income levels.
-    Low-income benefits from subsidies, high-income has capital availability.
-    """
     base_rate = 0.28
     trust_effect = 0.15 * trust
     
