@@ -28,6 +28,7 @@ class AgentSchema(BaseModel):
     income: float
     scenario: ScenarioType
     environmental_concern: float
+    adoption_rate: float
 
     class Config:
         use_enum_values = True
