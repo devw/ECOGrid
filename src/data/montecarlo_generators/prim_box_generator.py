@@ -38,7 +38,7 @@ def calculate_adoption_in_box(
     
     for agent in agents:
         # Calculate adoption probability for this agent
-        adoption_prob = adoption_func(agent.trust, agent.income, agent.environmental_concern)
+        adoption_prob = adoption_func(agent.trust, agent.income, 0.0)
         
         # Check if agent is in the box
         in_box = (trust_min <= agent.trust <= trust_max and 
@@ -85,7 +85,7 @@ def calculate_density_and_lift(
     total_adoption_all = []
     
     for agent in agents:
-        adoption_prob = adoption_func(agent.trust, agent.income, agent.environmental_concern)
+        adoption_prob = adoption_func(agent.trust, agent.income, 0.0)
         total_adoption_all.append(adoption_prob)
         
         # Check if this is a "high adoption" case
@@ -103,7 +103,8 @@ def calculate_density_and_lift(
                 high_adoption_in_box += 1
     
     # Calculate density: % of high-adoption cases that are in the box
-    density = high_adoption_in_box / total_high_adoption if total_high_adoption > 0 else 0.0
+    n_in_box = len(total_adoption_in_box)
+    density = high_adoption_in_box / n_in_box if n_in_box > 0 else 0.0
     
     # Calculate lift: (avg adoption in box) / (avg adoption overall)
     avg_in_box = np.mean(total_adoption_in_box) if total_adoption_in_box else 0.0
@@ -118,35 +119,21 @@ def identify_prim_box(
     agents: List[AgentSchema],
     adoption_func: Callable[[float, float, float], float]
 ) -> Tuple[float, float, float, float, float, float, float]:
-    """
-    Identify PRIM box boundaries for high-adoption segment.
-    
-    Args:
-        scenario: Policy scenario
-        agents: List of agents
-        adoption_func: Function to calculate adoption
-        
-    Returns:
-        Tuple of (trust_min, trust_max, income_min, income_max, coverage, density, lift)
-    """
     # Define box boundaries (these can be optimized with actual PRIM algorithm)
     if scenario == ScenarioType.SERVICES_INCENTIVE:
-        # SI: High trust + high income segment
-        trust_min, trust_max = 0.65, 1.0
-        income_min, income_max = 70.0, 100.0
-        threshold = 0.5  # 50% adoption threshold for "high adoption"
-        
-    elif scenario == ScenarioType.ECONOMIC_INCENTIVE:
-        # EI: High trust + moderate-to-high income
-        trust_min, trust_max = 0.55, 1.0
-        income_min, income_max = 0.0, 30.0
+        trust_min, trust_max = 0.60, 1.0     # era 0.65
+        income_min, income_max = 65.0, 100.0 # era 70.0, allineato con soglia calibrata
         threshold = 0.5
         
+    elif scenario == ScenarioType.ECONOMIC_INCENTIVE:
+        trust_min, trust_max = 0.50, 1.0      # era 0.45, più selettivo su trust
+        income_min, income_max = 0.0, 30.0    # era 25.0, cattura bottom 30%
+        threshold = 0.35                       # era 0.40, più inclusivo
+        
     else:  # NO_INCENTIVE
-        # NI: No clear segment (full population)
-        trust_min, trust_max = 0.0, 1.0
-        income_min, income_max = 0.0, 100.0
-        threshold = 0.3  # Lower threshold for baseline
+        trust_min, trust_max = 0.45, 1.0     # era 0.0-1.0, ORA TARGETIZZA alto trust
+        income_min, income_max = 60.0, 100.0 # era 0.0-100.0, ORA TARGETIZZA alto reddito
+        threshold = 0.25                      # era 0.3, più selettivo
     
     # Calculate actual statistics from data
     avg_in_box, avg_outside, coverage, n_in_box = calculate_adoption_in_box(
@@ -167,17 +154,6 @@ def generate_prim_boxes(
     agents: List[AgentSchema],
     random_state: np.random.RandomState
 ) -> List[PRIMBoxSchema]:
-    """
-    Generate PRIM box boundaries for a scenario.
-    
-    Args:
-        scenario: Policy scenario
-        agents: List of agents for analysis
-        random_state: Random state for reproducibility
-        
-    Returns:
-        List containing the final PRIM box
-    """
     adoption_func = get_adoption_function(scenario)
     trust_min, trust_max, income_min, income_max, coverage, density, lift = \
         identify_prim_box(scenario, agents, adoption_func)

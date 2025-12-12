@@ -9,6 +9,7 @@ from typing import List
 import numpy as np
 
 from src.data.schemas import ScenarioType, AgentSchema
+from src.data.montecarlo_generators.adoption_functions import get_adoption_function
 
 
 def generate_agents(
@@ -16,34 +17,26 @@ def generate_agents(
     n_agents: int,
     random_state: np.random.RandomState
 ) -> List[AgentSchema]:
-    """
-    Generate individual agent data with trust and income attributes.
-    
-    Args:
-        scenario: Policy scenario
-        n_agents: Number of agents to generate
-        random_state: Random state for reproducibility
-        
-    Returns:
-        List of validated agent schemas
-    """
     agents = []
+    adoption_func = get_adoption_function(scenario)  # ← AGGIUNTO
     
     for agent_id in range(n_agents):
-        # Generate trust and income from realistic distributions
-        trust = random_state.beta(2, 2)  # Beta distribution centered around 0.5
-        income = random_state.lognormal(mean=3.5, sigma=0.6)  # Log-normal income
+        trust = random_state.beta(2, 2)
+        income = random_state.lognormal(mean=3.5, sigma=0.85)
         income = np.clip(income, 0.0, 100.0)
+        environmental_concern = random_state.beta(2.5, 2)
         
-        # Generate environmental concern (Beta distribution, slightly higher mean)
-        environmental_concern = random_state.beta(2.5, 2)  # Slightly skewed toward higher concern
+        # ← AGGIUNTO: Calcola adoption_rate
+        noise = random_state.normal(0, 0.05)
+        adoption_rate = adoption_func(trust, income, noise)  # ← Questo è OK
         
         agents.append(AgentSchema(
             agent_id=agent_id,
             trust=trust,
             income=income,
-            environmental_concern=environmental_concern,  # ← AGGIUNTO
-            scenario=scenario
+            environmental_concern=environmental_concern,
+            scenario=scenario,
+            adoption_rate=adoption_rate  # ← AGGIUNTO
         ))
     
     return agents

@@ -1,24 +1,7 @@
-"""
-Dummy data generator for ABM energy transition simulation.
-
-This module generates realistic synthetic data for visualization and analysis
-development, following the patterns described in the research paper.
-
-ENHANCED VERSION: Includes statistical significance metrics, confidence intervals,
-and replications for robust uncertainty quantification.
-
-Principles:
-- Functional approach: pure functions with explicit inputs/outputs
-- SOLID: Single responsibility per function
-- DRY: Reusable utilities for common operations
-"""
-
-from typing import List, Dict
 from dataclasses import dataclass
 import numpy as np
 from pathlib import Path
 import sys
-import json
 
 # Add project root to path for direct execution
 if __name__ == "__main__":
@@ -27,7 +10,6 @@ if __name__ == "__main__":
 
 from src.data.schemas import ScenarioType
 from .config import GeneratorConfig
-from src.data.csv_utils import schemas_to_csv
 
 # =============================================================================
 # NEW: Enhanced Schemas for PRIM Trajectory with Replications
@@ -72,7 +54,6 @@ class HeatmapReplicationSchema:
     adoption_rate: float
     n_samples: int
 
-from .metadata_generator import generate_scale_metadata
 from .orchestrator import generate_all_scenarios
 from .csv_writer import save_all_data
 
