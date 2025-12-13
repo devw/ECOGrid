@@ -1,0 +1,73 @@
+# Unified Scenario Configuration
+# All parameters for Monte Carlo generation
+
+scenarios:
+  no_incentive:
+    description: "Baseline scenario - no policy intervention"
+    
+    # PRIM Box boundaries
+    prim_box:
+      trust_min: 0.45
+      trust_max: 1.0
+      income_min: 60.0
+      income_max: 100.0
+      threshold: 0.25
+    
+    # Adoption function parameters
+    adoption:
+      base_rate: 0.05
+      trust_coefficient: 0.08
+      trust_exponent: 1.0
+      income_coefficient: 0.30
+      income_exponent: 1.0
+      income_threshold: null
+      income_multiplier_high: null
+      income_multiplier_low: null
+  
+  services_incentive:
+    description: "Community services incentive - targets high trust & income"
+    
+    prim_box:
+      trust_min: 0.60
+      trust_max: 1.0
+      income_min: 65.0
+      income_max: 100.0
+      threshold: 0.5
+    
+    adoption:
+      base_rate: 0.08
+      trust_coefficient: 0.22
+      trust_exponent: 1.8
+      income_coefficient: null  # Uses multiplier logic instead
+      income_exponent: null
+      income_threshold: 0.65  # 65th percentile threshold
+      income_multiplier_high: 2.2  # For income > threshold
+      income_multiplier_low: 0.5   # For income <= threshold
+  
+  economic_incentive:
+    description: "Economic subsidies - targets low income population"
+    
+    prim_box:
+      trust_min: 0.50
+      trust_max: 1.0
+      income_min: 0.0
+      income_max: 30.0
+      threshold: 0.35
+    
+    adoption:
+      base_rate: 0.32
+      trust_coefficient: 0.15
+      trust_exponent: 1.0
+      income_coefficient: -0.25  # Negative: favors low income
+      income_exponent: 1.0
+      income_threshold: null
+      income_multiplier_high: null
+      income_multiplier_low: null
+
+# Global validation rules
+validation:
+  trust_range: [0.0, 1.0]
+  income_range: [0.0, 100.0]
+  threshold_range: [0.0, 1.0]
+  base_rate_range: [0.0, 1.0]
+  adoption_range: [0.0, 1.0]

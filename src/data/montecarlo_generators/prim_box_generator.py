@@ -1,12 +1,12 @@
 """
-PRIM Box Generation - Data-Driven from YAML Config.
-Zero hardcoded values, fully configurable.
+PRIM Box Generation - Unified Config.
+Uses scenario_config for all parameters.
 """
 from typing import List, Tuple, Callable
 import numpy as np
 from src.data.schemas import ScenarioType, AgentSchema, PRIMBoxSchema
 from .adoption_functions import get_adoption_function
-from .prim_box_config import get_prim_boundaries
+from .scenario_config import get_prim_box_config
 
 
 def _partition_agents_by_box(
@@ -15,14 +15,14 @@ def _partition_agents_by_box(
     trust_max: float,
     income_min: float,
     income_max: float,
-    adoption_func: Callable[[float, float, float], float]
+    adoption_func: Callable[[float, float], float]
 ) -> Tuple[List[float], List[float]]:
     """Single-pass agent partitioning."""
     adoptions_in = []
     adoptions_out = []
     
     for agent in agents:
-        adoption = adoption_func(agent.trust, agent.income, 0.0)
+        adoption = adoption_func(agent.trust, agent.income)
         in_box = (trust_min <= agent.trust <= trust_max and 
                   income_min <= agent.income <= income_max)
         (adoptions_in if in_box else adoptions_out).append(adoption)
@@ -36,7 +36,7 @@ def _calculate_statistics(
     threshold: float,
     n_total: int
 ) -> Tuple[float, float, float, float, float]:
-    """Calculate PRIM statistics from partitioned adoptions."""
+    """Calculate PRIM statistics."""
     n_in = len(adoptions_in)
     all_adoptions = adoptions_in + adoptions_out
     
@@ -56,13 +56,10 @@ def _calculate_statistics(
 def identify_prim_box(
     scenario: ScenarioType,
     agents: List[AgentSchema],
-    adoption_func: Callable[[float, float, float], float]
+    adoption_func: Callable[[float, float], float]
 ) -> Tuple[float, float, float, float, float, float, float]:
-    """
-    Identify PRIM box from YAML configuration.
-    Zero hardcoded values.
-    """
-    config = get_prim_boundaries(scenario)
+    """Identify PRIM box from unified config."""
+    config = get_prim_box_config(scenario)
     
     adoptions_in, adoptions_out = _partition_agents_by_box(
         agents,
