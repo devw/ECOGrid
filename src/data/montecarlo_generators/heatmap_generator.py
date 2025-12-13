@@ -34,8 +34,7 @@ def generate_heatmap_replications(
     for trust in trust_bins:
         for income in income_bins:
             for rep_id in range(n_replications):
-                noise = random_state.normal(0, noise_std)
-                adoption_rate = adoption_func(trust, income, noise)
+                adoption_rate = adoption_func(trust, income)
                 replications_data.append(HeatmapGridSchema(
                     scenario=scenario,
                     trust_bin=trust,

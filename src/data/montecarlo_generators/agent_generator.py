@@ -26,9 +26,7 @@ def generate_agents(
         income = np.clip(income, 0.0, 100.0)
         environmental_concern = random_state.beta(2.5, 2)
         
-        # ← AGGIUNTO: Calcola adoption_rate
-        noise = random_state.normal(0, 0.05)
-        adoption_rate = adoption_func(trust, income, noise)  # ← Questo è OK
+        adoption_rate = adoption_func(trust, income) 
         
         agents.append(AgentSchema(
             agent_id=agent_id,

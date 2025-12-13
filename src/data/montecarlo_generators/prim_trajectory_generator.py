@@ -1,10 +1,7 @@
 """
-PRIM Trajectory Generation for Agent-Based Model.
-
-This module generates PRIM peeling trajectories with Monte Carlo replications
-for uncertainty quantification in energy transition scenarios.
+PRIM Trajectory Generation - Data-Driven from YAML Config.
+Zero hardcoded values, fully configurable.
 """
-
 from typing import List, Tuple
 from dataclasses import asdict
 import numpy as np
@@ -16,6 +13,36 @@ from src.data.schemas import (
     PRIMTrajectoryEnhancedSchema
 )
 from src.utils.montecarlo_stats import aggregate_replications
+from .scenario_config import get_prim_trajectory_config, get_global_config
+
+
+def _calculate_trajectory_arrays(
+    config,
+    n_iterations: int
+) -> Tuple[np.ndarray, np.ndarray, int]:
+    """
+    Calculate base trajectory arrays from config.
+    
+    Returns:
+        (base_coverages, base_densities, selected_iteration)
+    """
+    base_coverages = np.linspace(
+        config.coverage_start,
+        config.coverage_end,
+        n_iterations
+    )
+    
+    if config.density_exponent is not None:
+        base_densities = (
+            config.density_base + 
+            config.density_coefficient * (1 - base_coverages) ** config.density_exponent
+        )
+    else:
+        base_densities = np.full(n_iterations, config.density_base)
+    
+    selected_iteration = n_iterations + config.selected_iteration_offset
+    
+    return base_coverages, base_densities, selected_iteration
 
 
 def generate_prim_trajectory_replications(
@@ -27,46 +54,27 @@ def generate_prim_trajectory_replications(
 ) -> List[PRIMTrajectoryReplicationSchema]:
     """
     Generate PRIM peeling trajectory data with replications.
-    
-    Creates multiple runs to capture uncertainty in the peeling process.
-    
-    Args:
-        scenario: Policy scenario
-        n_iterations: Number of peeling iterations
-        n_replications: Number of Monte Carlo replications
-        noise_std: Standard deviation of noise to add
-        random_state: Random state for reproducibility
-        
-    Returns:
-        List of trajectory points for all replications
+    Uses configuration from YAML - zero hardcoded values.
     """
+    config = get_prim_trajectory_config(scenario)
+    global_config = get_global_config()
+    
+    base_coverages, base_densities, selected_iteration = _calculate_trajectory_arrays(
+        config, n_iterations
+    )
+    
     all_replications = []
     
-    # Base trajectory parameters per scenario
-    if scenario == ScenarioType.SERVICES_INCENTIVE:
-        # SI: Dramatic peeling (100% → 6% coverage, maintaining high density)
-        base_coverages = np.linspace(1.0, 0.06, n_iterations)
-        base_densities = 0.30 + 0.51 * (1 - base_coverages) ** 0.8
-        selected_iteration = n_iterations - 3
-        
-    elif scenario == ScenarioType.ECONOMIC_INCENTIVE:
-        # EI: Moderate peeling (100% → 31% coverage)
-        base_coverages = np.linspace(1.0, 0.31, n_iterations)
-        base_densities = 0.25 + 0.40 * (1 - base_coverages) ** 0.6
-        selected_iteration = n_iterations - 5
-        
-    else:  # NO_INCENTIVE
-        # NI: Flat trajectory (no meaningful peeling)
-        base_coverages = np.linspace(1.0, 0.95, n_iterations)
-        base_densities = np.full(n_iterations, 0.20)
-        selected_iteration = 0
-    
-    # Generate replications with noise
     for rep_id in range(n_replications):
         for i in range(n_iterations):
-            # Add stochastic noise to base trajectory
-            coverage_noise = random_state.normal(0, noise_std * 0.01)
-            density_noise = random_state.normal(0, noise_std)
+            coverage_noise = random_state.normal(
+                0, 
+                noise_std * global_config.coverage_noise_scale
+            )
+            density_noise = random_state.normal(
+                0, 
+                noise_std * global_config.density_noise_scale
+            )
             
             coverage = np.clip(base_coverages[i] + coverage_noise, 0.0, 1.0)
             density = np.clip(base_densities[i] + density_noise, 0.0, 1.0)
@@ -77,7 +85,7 @@ def generate_prim_trajectory_replications(
                 replication_id=rep_id,
                 coverage=coverage,
                 density=density,
-                n_agents=int(10000 * coverage),
+                n_agents=int(global_config.n_agents_total * coverage),
                 is_selected=(i == selected_iteration)
             ))
     
@@ -89,22 +97,13 @@ def aggregate_prim_trajectory_replications(
 ) -> List[PRIMTrajectoryEnhancedSchema]:
     """
     Aggregate PRIM trajectory replications into summary statistics.
-    
     Uses stats_utils to compute confidence intervals.
-    
-    Args:
-        replications: List of all replication data
-        
-    Returns:
-        List of aggregated trajectory points with statistics
     """
-    # Convert to DataFrame for easier aggregation
-    df = pd.DataFrame([asdict(r) for r in replications])
+    global_config = get_global_config()
     
-    # Rename replication_id to run_id for compatibility with stats_utils
+    df = pd.DataFrame([asdict(r) for r in replications])
     df = df.rename(columns={'replication_id': 'run_id'})
     
-    # Aggregate using our utility function
     aggregated = aggregate_replications(
         df,
         group_cols=['scenario', 'iteration'],
@@ -113,16 +112,15 @@ def aggregate_prim_trajectory_replications(
         ci_method='parametric'
     )
     
-    # Convert back to schema objects
     trajectory_enhanced = []
+    
+    # Create lookup for is_selected (same for all replications in group)
+    original_df = pd.DataFrame([asdict(r) for r in replications])
+    selected_lookup = original_df.groupby(['scenario', 'iteration'])['is_selected'].first()
+    
     for _, row in aggregated.iterrows():
-        # Get the is_selected flag (same for all replications in group)
-        # Use replication_id here since we're working with original data
-        original_df = pd.DataFrame([asdict(r) for r in replications])
-        is_selected = original_df[
-            (original_df['scenario'] == row['scenario']) & 
-            (original_df['iteration'] == row['iteration'])
-        ]['is_selected'].iloc[0]
+        key = (row['scenario'], row['iteration'])
+        is_selected = selected_lookup[key]
         
         trajectory_enhanced.append(PRIMTrajectoryEnhancedSchema(
             scenario=ScenarioType(row['scenario']),
@@ -135,7 +133,7 @@ def aggregate_prim_trajectory_replications(
             density_std=row['density_std'],
             density_ci_lower=row['density_ci_lower'],
             density_ci_upper=row['density_ci_upper'],
-            n_agents_mean=int(10000 * row['coverage_mean']),
+            n_agents_mean=int(global_config.n_agents_total * row['coverage_mean']),
             is_selected=is_selected,
             n_replications=int(row['n_replications'])
         ))
@@ -154,23 +152,12 @@ def generate_prim_trajectory(
     Generate complete PRIM trajectory data: both aggregated and disaggregated.
     
     ENHANCED VERSION: Includes replications for uncertainty quantification.
-    
-    Args:
-        scenario: Policy scenario
-        n_iterations: Number of peeling iterations
-        n_replications: Number of Monte Carlo replications
-        noise_std: Standard deviation of noise
-        random_state: Random state for reproducibility
-        
-    Returns:
-        Tuple of (aggregated_trajectory, all_replications)
+    All parameters loaded from YAML configuration.
     """
-    # Generate all replications
     replications = generate_prim_trajectory_replications(
         scenario, n_iterations, n_replications, noise_std, random_state
     )
     
-    # Aggregate with statistics
     aggregated = aggregate_prim_trajectory_replications(replications)
     
     return aggregated, replications

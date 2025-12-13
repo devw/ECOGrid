@@ -1,49 +1,60 @@
+"""
+Adoption Functions - Data-Driven from YAML Config.
+Zero hardcoded parameters, fully configurable.
+"""
 from typing import Callable
 import numpy as np
 from src.data.schemas import ScenarioType
+from .scenario_config import get_adoption_config
 
 
-def calculate_adoption_no_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    base_rate = 0.05
-    income_effect = 0.30 * (income / 100.0)
-    trust_effect = 0.08 * trust
+def calculate_adoption(
+    trust: float,
+    income: float,
+    scenario: ScenarioType
+) -> float:
+    """
+    Calculate adoption probability for given trust/income using config.
     
-    adoption = base_rate + income_effect + trust_effect + noise
-    return np.clip(adoption, 0.0, 1.0)
-
-
-def calculate_adoption_services_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    base_rate = 0.08
-    trust_effect = 0.22 * (trust ** 1.8)
-    
-    # Non-linear income effect: threshold at 70th percentile
+    Args:
+        trust: Trust level [0, 1]
+        income: Income level [0, 100]
+        scenario: Policy scenario type
+        
+    Returns:
+        Adoption probability [0, 1]
+    """
+    config = get_adoption_config(scenario)
     income_norm = income / 100.0
-    if income_norm > 0.65:
-        # High income: strong multiplier (community services adoption)
-        income_multiplier = 1.0 + 2.2 * income_norm
+    
+    # Base adoption rate
+    adoption = config.base_rate
+    
+    # Trust effect: base_rate + trust_coef * trust^trust_exp
+    adoption += config.trust_coefficient * (trust ** config.trust_exponent)
+    
+    # Income effect: two different strategies based on config
+    if config.income_threshold is not None:
+        # Multiplier strategy (services_incentive)
+        if income_norm > config.income_threshold:
+            income_multiplier = 1.0 + config.income_multiplier_high * income_norm
+        else:
+            income_multiplier = 1.0 + config.income_multiplier_low * income_norm
+        adoption *= income_multiplier
     else:
-        # Low/Mid income: moderate multiplier
-        income_multiplier = 1.0 + 0.5 * income_norm
+        # Linear coefficient strategy (no_incentive, economic_incentive)
+        income_effect = config.income_coefficient * (income_norm ** config.income_exponent)
+        adoption += income_effect
     
-    adoption = (base_rate + trust_effect) * income_multiplier + noise
     return np.clip(adoption, 0.0, 1.0)
 
 
-def calculate_adoption_economic_incentive(trust: float, income: float, noise: float = 0.0) -> float:
-    base_rate = 0.32
-    trust_effect = 0.15 * trust
-    income_normalized = income / 100.0
-    income_effect = -0.25 * income_normalized  
+def get_adoption_function(scenario: ScenarioType) -> Callable[[float, float], float]:
+    """
+    Get adoption function for scenario.
+    Returns a callable that takes (trust, income) and returns adoption probability.
+    """
+    def adoption_func(trust: float, income: float) -> float:
+        return calculate_adoption(trust, income, scenario)
     
-    adoption = base_rate + trust_effect + income_effect + noise
-    return np.clip(adoption, 0.0, 1.0)
-
-
-def get_adoption_function(scenario: ScenarioType) -> Callable[[float, float, float], float]:
-    """Get calibrated adoption function for a given scenario."""
-    mapping = {
-        ScenarioType.NO_INCENTIVE: calculate_adoption_no_incentive,
-        ScenarioType.SERVICES_INCENTIVE: calculate_adoption_services_incentive,
-        ScenarioType.ECONOMIC_INCENTIVE: calculate_adoption_economic_incentive,
-    }
-    return mapping[scenario]
+    return adoption_func
