@@ -23,6 +23,16 @@ scenarios:
       income_threshold: null
       income_multiplier_high: null
       income_multiplier_low: null
+    
+    # PRIM trajectory parameters
+    prim_trajectory:
+      coverage_start: 1.0
+      coverage_end: 0.95
+      density_base: 0.20
+      density_coefficient: 0.0
+      density_exponent: null
+      selected_iteration_offset: 0
+      description: "Flat trajectory - minimal peeling"
   
   services_incentive:
     description: "Community services incentive - targets high trust & income"
@@ -38,11 +48,20 @@ scenarios:
       base_rate: 0.08
       trust_coefficient: 0.22
       trust_exponent: 1.8
-      income_coefficient: null  # Uses multiplier logic instead
+      income_coefficient: null
       income_exponent: null
-      income_threshold: 0.65  # 65th percentile threshold
-      income_multiplier_high: 2.2  # For income > threshold
-      income_multiplier_low: 0.5   # For income <= threshold
+      income_threshold: 0.65
+      income_multiplier_high: 2.2
+      income_multiplier_low: 0.5
+    
+    prim_trajectory:
+      coverage_start: 1.0
+      coverage_end: 0.06
+      density_base: 0.30
+      density_coefficient: 0.51
+      density_exponent: 0.8
+      selected_iteration_offset: -3
+      description: "Dramatic peeling - 100% to 6% coverage"
   
   economic_incentive:
     description: "Economic subsidies - targets low income population"
@@ -58,16 +77,34 @@ scenarios:
       base_rate: 0.32
       trust_coefficient: 0.15
       trust_exponent: 1.0
-      income_coefficient: -0.25  # Negative: favors low income
+      income_coefficient: -0.25
       income_exponent: 1.0
       income_threshold: null
       income_multiplier_high: null
       income_multiplier_low: null
+    
+    prim_trajectory:
+      coverage_start: 1.0
+      coverage_end: 0.31
+      density_base: 0.25
+      density_coefficient: 0.40
+      density_exponent: 0.6
+      selected_iteration_offset: -5
+      description: "Moderate peeling - 100% to 31% coverage"
 
-# Global validation rules
+# Global parameters
+global:
+  n_agents_total: 10000
+  noise_scaling:
+    coverage: 0.01
+    density: 1.0
+
+# Validation rules
 validation:
   trust_range: [0.0, 1.0]
   income_range: [0.0, 100.0]
   threshold_range: [0.0, 1.0]
   base_rate_range: [0.0, 1.0]
   adoption_range: [0.0, 1.0]
+  coverage_range: [0.0, 1.0]
+  density_range: [0.0, 1.0]

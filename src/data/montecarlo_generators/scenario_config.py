@@ -44,16 +44,49 @@ class AdoptionFunctionConfig:
 
 
 @dataclass(frozen=True)
+class PRIMTrajectoryConfig:
+    """PRIM trajectory parameters configuration."""
+    coverage_start: float
+    coverage_end: float
+    density_base: float
+    density_coefficient: float
+    density_exponent: Optional[float]
+    selected_iteration_offset: int
+    description: str
+    
+    def validate(self) -> None:
+        assert 0.0 <= self.coverage_start <= 1.0
+        assert 0.0 <= self.coverage_end <= 1.0
+        assert self.coverage_start >= self.coverage_end
+        assert 0.0 <= self.density_base <= 1.0
+
+
+@dataclass(frozen=True)
+class GlobalConfig:
+    """Global configuration parameters."""
+    n_agents_total: int
+    coverage_noise_scale: float
+    density_noise_scale: float
+    
+    def validate(self) -> None:
+        assert self.n_agents_total > 0
+        assert self.coverage_noise_scale >= 0
+        assert self.density_noise_scale >= 0
+
+
+@dataclass(frozen=True)
 class ScenarioConfig:
     """Complete scenario configuration."""
     scenario_type: ScenarioType
     description: str
     prim_box: PRIMBoxConfig
     adoption: AdoptionFunctionConfig
+    prim_trajectory: PRIMTrajectoryConfig
     
     def validate(self) -> None:
         self.prim_box.validate()
         self.adoption.validate()
+        self.prim_trajectory.validate()
 
 
 SCENARIO_TO_KEY = {
@@ -97,13 +130,36 @@ def _parse_adoption(data: Dict) -> AdoptionFunctionConfig:
     )
 
 
+def _parse_prim_trajectory(data: Dict) -> PRIMTrajectoryConfig:
+    """Parse PRIM trajectory configuration."""
+    return PRIMTrajectoryConfig(
+        coverage_start=float(data['coverage_start']),
+        coverage_end=float(data['coverage_end']),
+        density_base=float(data['density_base']),
+        density_coefficient=float(data['density_coefficient']),
+        density_exponent=float(data['density_exponent']) if data['density_exponent'] is not None else None,
+        selected_iteration_offset=int(data['selected_iteration_offset']),
+        description=str(data['description'])
+    )
+
+
+def _parse_global(data: Dict) -> GlobalConfig:
+    """Parse global configuration."""
+    return GlobalConfig(
+        n_agents_total=int(data['n_agents_total']),
+        coverage_noise_scale=float(data['noise_scaling']['coverage']),
+        density_noise_scale=float(data['noise_scaling']['density'])
+    )
+
+
 def _parse_scenario(scenario_type: ScenarioType, data: Dict) -> ScenarioConfig:
     """Parse complete scenario configuration."""
     return ScenarioConfig(
         scenario_type=scenario_type,
         description=data['description'],
         prim_box=_parse_prim_box(data['prim_box']),
-        adoption=_parse_adoption(data['adoption'])
+        adoption=_parse_adoption(data['adoption']),
+        prim_trajectory=_parse_prim_trajectory(data['prim_trajectory'])
     )
 
 
@@ -112,6 +168,7 @@ class ScenarioConfigLoader:
     
     _instance = None
     _config_cache: Dict[ScenarioType, ScenarioConfig] = {}
+    _global_config: Optional[GlobalConfig] = None
     
     def __new__(cls):
         if cls._instance is None:
@@ -125,6 +182,11 @@ class ScenarioConfigLoader:
         
         config_data = _load_yaml_config(config_path)
         
+        # Parse global config
+        self._global_config = _parse_global(config_data['global'])
+        self._global_config.validate()
+        
+        # Parse scenario configs
         for scenario, key in SCENARIO_TO_KEY.items():
             scenario_config = _parse_scenario(scenario, config_data['scenarios'][key])
             scenario_config.validate()
@@ -148,9 +210,20 @@ class ScenarioConfigLoader:
         """Get adoption function configuration for scenario."""
         return self.get_config(scenario).adoption
     
+    def get_prim_trajectory(self, scenario: ScenarioType) -> PRIMTrajectoryConfig:
+        """Get PRIM trajectory configuration for scenario."""
+        return self.get_config(scenario).prim_trajectory
+    
+    def get_global(self) -> GlobalConfig:
+        """Get global configuration."""
+        if self._global_config is None:
+            self.load_config()
+        return self._global_config
+    
     def reload(self, config_path: Path = None) -> None:
         """Force reload configuration from file."""
         self._config_cache.clear()
+        self._global_config = None
         self.load_config(config_path)
 
 
@@ -170,6 +243,16 @@ def get_prim_box_config(scenario: ScenarioType) -> PRIMBoxConfig:
 def get_adoption_config(scenario: ScenarioType) -> AdoptionFunctionConfig:
     """Get adoption function configuration."""
     return _loader.get_adoption(scenario)
+
+
+def get_prim_trajectory_config(scenario: ScenarioType) -> PRIMTrajectoryConfig:
+    """Get PRIM trajectory configuration."""
+    return _loader.get_prim_trajectory(scenario)
+
+
+def get_global_config() -> GlobalConfig:
+    """Get global configuration."""
+    return _loader.get_global()
 
 
 def reload_config(config_path: Path = None) -> None:
