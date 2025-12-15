@@ -53,22 +53,22 @@ scenarios:
   economic_incentive:
     description: "Economic subsidies"
     prim_box:
-      trust_min: 0.35
+      trust_min: 0.30                    # ⬇️ Da 0.35 - cattura più L basso trust
       income_min: 0.0
-      income_max: 30.0
-      threshold: 0.30
+      income_max: 32.0                   # ⬇️ Da 35.0 - MIRATO solo a L (0-33)
+      threshold: 0.45                    # ⬆️ Da 0.35 - PIÙ SELETTIVO
     adoption:
-      base_rate: 0.38                # aumento per alzare EI
-      trust_coefficient: 0.18
-      trust_exponent: 1.0
-      income_coefficient: -0.25
-      income_exponent: 1.2
-      income_multiplier_low: 2.8      # aumenta L per alzare EI
-      income_multiplier_high: 2.2     # aumenta H per alzare EI
+      base_rate: 0.42                    # ⬇️ Da 0.48 - riduce Avg generale
+      trust_coefficient: 0.15            # ⬇️ Da 0.18 - meno peso a trust
+      trust_exponent: 0.95               # ⬇️ Da 1.0
+      income_coefficient: -0.35          # ⬇️ Da -0.20 - penalizza più M/H
+      income_exponent: 1.5               # ⬆️ Da 1.3 - amplifica differenze
+      income_multiplier_low: 5.5         # ⬆️ Da 4.8 - BOOST MASSIMO per L
+      income_multiplier_high: 2.2        # ⬇️ Da 2.5 - riduci H
     prim_trajectory:
-      coverage_end: 0.35               # leggermente più alto per EI
-      density_base: 0.33
-      density_coefficient: 0.42
-      density_exponent: 0.6
-      selected_iteration_offset: -5
-      description: "Moderate peeling - balanced adoption"
+      coverage_end: 0.28                 # ⬇️ Da 0.38 - BOX PIÙ PICCOLA
+      density_base: 0.45                 # ⬆️ Da 0.36 - PIÙ DENSA in L
+      density_coefficient: 0.60          # ⬆️ Da 0.48 - peeling forte
+      density_exponent: 0.50             # ⬇️ Da 0.60 - curva ripida
+      selected_iteration_offset: -8      # ⬇️ Da -5 - PEELING AGGRESSIVO
+      description: "Aggressive peeling - L-focused"
