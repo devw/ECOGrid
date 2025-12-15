@@ -1,5 +1,6 @@
 # ECOGrid Scenario Configuration
 # Unified parameter file for Monte Carlo generation
+# Calibrated for Italian context: 40% population <20K, low institutional trust (0.35-0.45)
 
 defaults:
   trust_max: 1.0
@@ -11,72 +12,72 @@ defaults:
 
 scenarios:
   no_incentive:
-    description: "Baseline - no policy intervention"
+    description: "Baseline - no policy intervention (Italian context: 12-20% low-income adoption)"
     
     prim_box:
-      trust_min: 0.45
+      trust_min: 0.35          # Abbassato da 0.45 per riflettere bassa fiducia italiana
       income_min: 60.0
       income_max: 100.0
       threshold: 0.25
     
     adoption:
-      base_rate: 0.05
-      trust_coefficient: 0.08
-      trust_exponent: 1.0
-      income_coefficient: 0.30
-      income_exponent: 1.0
+      base_rate: 0.02          # Ridotto da 0.05 per abbassare adozione generale
+      trust_coefficient: 0.12   # Aumentato da 0.08 per dare più peso alla fiducia
+      trust_exponent: 1.2       # Aumentato da 1.0 per enfatizzare effetto fiducia
+      income_coefficient: 0.35  # Aumentato da 0.30 per maggiore stratificazione
+      income_exponent: 1.2      # Aumentato da 1.0 per effetto più pronunciato
     
     prim_trajectory:
       coverage_end: 0.95
-      density_base: 0.20
+      density_base: 0.15        # Ridotto da 0.20
       density_coefficient: 0.0
       selected_iteration_offset: 0
       description: "Flat trajectory - minimal peeling"
   
   services_incentive:
-    description: "Community services - targets high trust & income"
+    description: "Community services (Italian context: 10-18% low-income adoption)"
     
     prim_box:
-      trust_min: 0.60
+      trust_min: 0.55          # Ridotto da 0.60
       income_min: 65.0
       income_max: 100.0
       threshold: 0.5
     
     adoption:
-      base_rate: 0.08
-      trust_coefficient: 0.22
-      trust_exponent: 1.8
+      base_rate: 0.04          # Ridotto da 0.08
+      trust_coefficient: 0.28   # Aumentato da 0.22 per maggiore dipendenza da fiducia
+      trust_exponent: 2.0       # Aumentato da 1.8
       income_threshold: 0.65
-      income_multiplier_high: 2.2
-      income_multiplier_low: 0.5
+      income_multiplier_high: 1.8  # Ridotto da 2.2 per abbassare adozione high-income
+      income_multiplier_low: 0.4   # Ridotto da 0.5 per riflettere target 10-18%
     
     prim_trajectory:
       coverage_end: 0.06
-      density_base: 0.30
+      density_base: 0.25        # Ridotto da 0.30
       density_coefficient: 0.51
       density_exponent: 0.8
       selected_iteration_offset: -3
       description: "Dramatic peeling - 100% to 6% coverage"
   
   economic_incentive:
-    description: "Economic subsidies - targets low income"
+    description: "Economic subsidies (Italian context: 25-35% low-income adoption)"
     
     prim_box:
-      trust_min: 0.50
+      trust_min: 0.35          # Ridotto da 0.50 per includere popolazione a bassa fiducia
       income_min: 0.0
       income_max: 30.0
-      threshold: 0.35
+      threshold: 0.30          # Ridotto da 0.35
     
     adoption:
-      base_rate: 0.32
-      trust_coefficient: 0.15
+      base_rate: 0.28          # Ridotto da 0.32 per target 25-35%
+      trust_coefficient: 0.18   # Aumentato da 0.15
       trust_exponent: 1.0
-      income_coefficient: -0.25
-      income_exponent: 1.0
+      income_coefficient: -0.32 # Aumentato (in valore assoluto) da -0.25 per penalizzare di più alto reddito
+      income_exponent: 1.2      # Aumentato da 1.0 per effetto più forte
     
     prim_trajectory:
       coverage_end: 0.31
-      density_base: 0.25
+      density_base: 0.28        # Aumentato da 0.25
       density_coefficient: 0.40
       density_exponent: 0.6
       selected_iteration_offset: -5
