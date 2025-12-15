@@ -1,36 +1,36 @@
 # Unified Scenario Configuration
 # All parameters for Monte Carlo generation
 
+# Global defaults (applied to all scenarios unless overridden)
+defaults:
+  trust_max: 1.0
+  coverage_start: 1.0
+  n_agents_total: 10000
+  noise_scaling:
+    coverage: 0.01
+    density: 1.0
+
 scenarios:
   no_incentive:
     description: "Baseline scenario - no policy intervention"
     
-    # PRIM Box boundaries
     prim_box:
       trust_min: 0.45
-      trust_max: 1.0
       income_min: 60.0
       income_max: 100.0
       threshold: 0.25
     
-    # Adoption function parameters
     adoption:
       base_rate: 0.05
       trust_coefficient: 0.08
       trust_exponent: 1.0
       income_coefficient: 0.30
       income_exponent: 1.0
-      income_threshold: null
-      income_multiplier_high: null
-      income_multiplier_low: null
     
-    # PRIM trajectory parameters
     prim_trajectory:
-      coverage_start: 1.0
       coverage_end: 0.95
       density_base: 0.20
       density_coefficient: 0.0
-      density_exponent: null
       selected_iteration_offset: 0
       description: "Flat trajectory - minimal peeling"
   
@@ -39,7 +39,6 @@ scenarios:
     
     prim_box:
       trust_min: 0.60
-      trust_max: 1.0
       income_min: 65.0
       income_max: 100.0
       threshold: 0.5
@@ -48,14 +47,11 @@ scenarios:
       base_rate: 0.08
       trust_coefficient: 0.22
       trust_exponent: 1.8
-      income_coefficient: null
-      income_exponent: null
       income_threshold: 0.65
       income_multiplier_high: 2.2
       income_multiplier_low: 0.5
     
     prim_trajectory:
-      coverage_start: 1.0
       coverage_end: 0.06
       density_base: 0.30
       density_coefficient: 0.51
@@ -68,7 +64,6 @@ scenarios:
     
     prim_box:
       trust_min: 0.50
-      trust_max: 1.0
       income_min: 0.0
       income_max: 30.0
       threshold: 0.35
@@ -79,12 +74,8 @@ scenarios:
       trust_exponent: 1.0
       income_coefficient: -0.25
       income_exponent: 1.0
-      income_threshold: null
-      income_multiplier_high: null
-      income_multiplier_low: null
     
     prim_trajectory:
-      coverage_start: 1.0
       coverage_end: 0.31
       density_base: 0.25
       density_coefficient: 0.40
@@ -92,19 +83,8 @@ scenarios:
       selected_iteration_offset: -5
       description: "Moderate peeling - 100% to 31% coverage"
 
-# Global parameters
-global:
-  n_agents_total: 10000
-  noise_scaling:
-    coverage: 0.01
-    density: 1.0
-
-# Validation rules
+# Validation rules (only truly variable constraints)
 validation:
-  trust_range: [0.0, 1.0]
   income_range: [0.0, 100.0]
   threshold_range: [0.0, 1.0]
   base_rate_range: [0.0, 1.0]
-  adoption_range: [0.0, 1.0]
-  coverage_range: [0.0, 1.0]
-  density_range: [0.0, 1.0]

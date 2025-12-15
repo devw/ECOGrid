@@ -105,11 +105,12 @@ def _load_yaml_config(config_path: Path) -> Dict:
         return yaml.safe_load(f)
 
 
-def _parse_prim_box(data: Dict) -> PRIMBoxConfig:
+def _parse_prim_box(data: Dict, defaults: Dict = None) -> PRIMBoxConfig:
     """Parse PRIM box configuration."""
+    defaults = defaults or {}
     return PRIMBoxConfig(
         trust_min=float(data['trust_min']),
-        trust_max=float(data['trust_max']),
+        trust_max=float(data.get('trust_max', defaults.get('trust_max', 1.0))),
         income_min=float(data['income_min']),
         income_max=float(data['income_max']),
         threshold=float(data['threshold'])
@@ -122,22 +123,23 @@ def _parse_adoption(data: Dict) -> AdoptionFunctionConfig:
         base_rate=float(data['base_rate']),
         trust_coefficient=float(data['trust_coefficient']),
         trust_exponent=float(data['trust_exponent']),
-        income_coefficient=float(data['income_coefficient']) if data['income_coefficient'] is not None else None,
-        income_exponent=float(data['income_exponent']) if data['income_exponent'] is not None else None,
-        income_threshold=float(data['income_threshold']) if data['income_threshold'] is not None else None,
-        income_multiplier_high=float(data['income_multiplier_high']) if data['income_multiplier_high'] is not None else None,
-        income_multiplier_low=float(data['income_multiplier_low']) if data['income_multiplier_low'] is not None else None,
+        income_coefficient=float(data['income_coefficient']) if data.get('income_coefficient') is not None else None,
+        income_exponent=float(data['income_exponent']) if data.get('income_exponent') is not None else None,
+        income_threshold=float(data['income_threshold']) if data.get('income_threshold') is not None else None,
+        income_multiplier_high=float(data['income_multiplier_high']) if data.get('income_multiplier_high') is not None else None,
+        income_multiplier_low=float(data['income_multiplier_low']) if data.get('income_multiplier_low') is not None else None,
     )
 
 
-def _parse_prim_trajectory(data: Dict) -> PRIMTrajectoryConfig:
+def _parse_prim_trajectory(data: Dict, defaults: Dict = None) -> PRIMTrajectoryConfig:
     """Parse PRIM trajectory configuration."""
+    defaults = defaults or {}
     return PRIMTrajectoryConfig(
-        coverage_start=float(data['coverage_start']),
+        coverage_start=float(data.get('coverage_start', defaults.get('coverage_start', 1.0))),
         coverage_end=float(data['coverage_end']),
         density_base=float(data['density_base']),
         density_coefficient=float(data['density_coefficient']),
-        density_exponent=float(data['density_exponent']) if data['density_exponent'] is not None else None,
+        density_exponent=float(data.get('density_exponent')) if data.get('density_exponent') is not None else None,
         selected_iteration_offset=int(data['selected_iteration_offset']),
         description=str(data['description'])
     )
@@ -152,14 +154,14 @@ def _parse_global(data: Dict) -> GlobalConfig:
     )
 
 
-def _parse_scenario(scenario_type: ScenarioType, data: Dict) -> ScenarioConfig:
+def _parse_scenario(scenario_type: ScenarioType, data: Dict, defaults: Dict = None) -> ScenarioConfig:
     """Parse complete scenario configuration."""
     return ScenarioConfig(
         scenario_type=scenario_type,
         description=data['description'],
-        prim_box=_parse_prim_box(data['prim_box']),
+        prim_box=_parse_prim_box(data['prim_box'], defaults),
         adoption=_parse_adoption(data['adoption']),
-        prim_trajectory=_parse_prim_trajectory(data['prim_trajectory'])
+        prim_trajectory=_parse_prim_trajectory(data['prim_trajectory'], defaults)
     )
 
 
@@ -183,12 +185,13 @@ class ScenarioConfigLoader:
         config_data = _load_yaml_config(config_path)
         
         # Parse global config
-        self._global_config = _parse_global(config_data['global'])
+        self._global_config = _parse_global(config_data.get('defaults', config_data.get('global', {})))
         self._global_config.validate()
         
         # Parse scenario configs
+        defaults = config_data.get('defaults', {})
         for scenario, key in SCENARIO_TO_KEY.items():
-            scenario_config = _parse_scenario(scenario, config_data['scenarios'][key])
+            scenario_config = _parse_scenario(scenario, config_data['scenarios'][key], defaults)
             scenario_config.validate()
             self._config_cache[scenario] = scenario_config
     
