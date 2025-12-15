@@ -1,92 +1,98 @@
 """
-Unified Scenario Configuration Loader.
-Loads all scenario parameters from single YAML file.
+Unified Scenario Configuration Loader - Refactored with Pydantic.
+Loads all scenario parameters from single YAML file with cleaner validation.
 """
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional
 import yaml
+from pydantic import BaseModel, Field, field_validator, model_validator
 from src.data.schemas import ScenarioType
 
 
-@dataclass(frozen=True)
-class PRIMBoxConfig:
+class PRIMBoxConfig(BaseModel):
     """PRIM box boundaries configuration."""
-    trust_min: float
-    trust_max: float
-    income_min: float
-    income_max: float
-    threshold: float
+    trust_min: float = Field(ge=0.0, le=1.0)
+    trust_max: float = Field(default=1.0, ge=0.0, le=1.0)
+    income_min: float = Field(ge=0.0, le=100.0)
+    income_max: float = Field(ge=0.0, le=100.0)
+    threshold: float = Field(ge=0.0, le=1.0)
     
-    def validate(self) -> None:
-        assert 0.0 <= self.trust_min <= self.trust_max <= 1.0
-        assert 0.0 <= self.income_min <= self.income_max <= 100.0
-        assert 0.0 <= self.threshold <= 1.0
+    @model_validator(mode='after')
+    def validate_ranges(self):
+        if self.trust_max < self.trust_min:
+            raise ValueError(f'trust_max ({self.trust_max}) < trust_min ({self.trust_min})')
+        if self.income_max < self.income_min:
+            raise ValueError(f'income_max ({self.income_max}) < income_min ({self.income_min})')
+        return self
 
 
-@dataclass(frozen=True)
-class AdoptionFunctionConfig:
+class AdoptionFunctionConfig(BaseModel):
     """Adoption function parameters configuration."""
-    base_rate: float
+    base_rate: float = Field(ge=0.0, le=1.0)
     trust_coefficient: float
-    trust_exponent: float
-    income_coefficient: Optional[float]
-    income_exponent: Optional[float]
-    income_threshold: Optional[float]
-    income_multiplier_high: Optional[float]
-    income_multiplier_low: Optional[float]
-    
-    def validate(self) -> None:
-        assert 0.0 <= self.base_rate <= 1.0
-        assert self.trust_exponent > 0
-        if self.income_threshold is not None:
-            assert 0.0 <= self.income_threshold <= 1.0
+    trust_exponent: float = Field(gt=0.0)
+    income_coefficient: Optional[float] = None
+    income_exponent: Optional[float] = None
+    income_threshold: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    income_multiplier_high: Optional[float] = None
+    income_multiplier_low: Optional[float] = None
 
 
-@dataclass(frozen=True)
-class PRIMTrajectoryConfig:
+class PRIMTrajectoryConfig(BaseModel):
     """PRIM trajectory parameters configuration."""
-    coverage_start: float
-    coverage_end: float
-    density_base: float
+    coverage_start: float = Field(default=1.0, ge=0.0, le=1.0)
+    coverage_end: float = Field(ge=0.0, le=1.0)
+    density_base: float = Field(ge=0.0, le=1.0)
     density_coefficient: float
-    density_exponent: Optional[float]
+    density_exponent: Optional[float] = None
     selected_iteration_offset: int
     description: str
     
-    def validate(self) -> None:
-        assert 0.0 <= self.coverage_start <= 1.0
-        assert 0.0 <= self.coverage_end <= 1.0
-        assert self.coverage_start >= self.coverage_end
-        assert 0.0 <= self.density_base <= 1.0
+    @model_validator(mode='after')
+    def validate_coverage_range(self):
+        if self.coverage_start < self.coverage_end:
+            raise ValueError(
+                f'coverage_start ({self.coverage_start}) < coverage_end ({self.coverage_end})'
+            )
+        return self
 
 
-@dataclass(frozen=True)
-class GlobalConfig:
+class NoiseScalingConfig(BaseModel):
+    """Noise scaling configuration."""
+    coverage: float = Field(ge=0.0)
+    density: float = Field(ge=0.0)
+
+
+class GlobalConfig(BaseModel):
     """Global configuration parameters."""
-    n_agents_total: int
-    coverage_noise_scale: float
-    density_noise_scale: float
+    n_agents_total: int = Field(gt=0)
+    noise_scaling: NoiseScalingConfig
+
+    @property
+    def coverage_noise_scale(self) -> float:
+        """Backward compatibility property."""
+        return self.noise_scaling.coverage
     
-    def validate(self) -> None:
-        assert self.n_agents_total > 0
-        assert self.coverage_noise_scale >= 0
-        assert self.density_noise_scale >= 0
+    @property
+    def density_noise_scale(self) -> float:
+        """Backward compatibility property."""
+        return self.noise_scaling.density
+
+class DefaultsConfig(BaseModel):
+    """Default values applied to all scenarios."""
+    trust_max: float = Field(default=1.0, ge=0.0, le=1.0)
+    coverage_start: float = Field(default=1.0, ge=0.0, le=1.0)
+    n_agents_total: int = Field(gt=0)
+    noise_scaling: NoiseScalingConfig
 
 
-@dataclass(frozen=True)
-class ScenarioConfig:
+class ScenarioConfig(BaseModel):
     """Complete scenario configuration."""
     scenario_type: ScenarioType
     description: str
     prim_box: PRIMBoxConfig
     adoption: AdoptionFunctionConfig
     prim_trajectory: PRIMTrajectoryConfig
-    
-    def validate(self) -> None:
-        self.prim_box.validate()
-        self.adoption.validate()
-        self.prim_trajectory.validate()
 
 
 SCENARIO_TO_KEY = {
@@ -105,63 +111,31 @@ def _load_yaml_config(config_path: Path) -> Dict:
         return yaml.safe_load(f)
 
 
-def _parse_prim_box(data: Dict, defaults: Dict = None) -> PRIMBoxConfig:
-    """Parse PRIM box configuration."""
-    defaults = defaults or {}
-    return PRIMBoxConfig(
-        trust_min=float(data['trust_min']),
-        trust_max=float(data.get('trust_max', defaults.get('trust_max', 1.0))),
-        income_min=float(data['income_min']),
-        income_max=float(data['income_max']),
-        threshold=float(data['threshold'])
-    )
+def _apply_defaults(scenario_data: Dict, defaults: DefaultsConfig) -> Dict:
+    """Apply default values to scenario data."""
+    scenario_data = scenario_data.copy()
+    
+    # Apply to prim_box
+    if 'prim_box' in scenario_data:
+        scenario_data['prim_box'].setdefault('trust_max', defaults.trust_max)
+    
+    # Apply to prim_trajectory
+    if 'prim_trajectory' in scenario_data:
+        scenario_data['prim_trajectory'].setdefault('coverage_start', defaults.coverage_start)
+    
+    return scenario_data
 
 
-def _parse_adoption(data: Dict) -> AdoptionFunctionConfig:
-    """Parse adoption function configuration."""
-    return AdoptionFunctionConfig(
-        base_rate=float(data['base_rate']),
-        trust_coefficient=float(data['trust_coefficient']),
-        trust_exponent=float(data['trust_exponent']),
-        income_coefficient=float(data['income_coefficient']) if data.get('income_coefficient') is not None else None,
-        income_exponent=float(data['income_exponent']) if data.get('income_exponent') is not None else None,
-        income_threshold=float(data['income_threshold']) if data.get('income_threshold') is not None else None,
-        income_multiplier_high=float(data['income_multiplier_high']) if data.get('income_multiplier_high') is not None else None,
-        income_multiplier_low=float(data['income_multiplier_low']) if data.get('income_multiplier_low') is not None else None,
-    )
-
-
-def _parse_prim_trajectory(data: Dict, defaults: Dict = None) -> PRIMTrajectoryConfig:
-    """Parse PRIM trajectory configuration."""
-    defaults = defaults or {}
-    return PRIMTrajectoryConfig(
-        coverage_start=float(data.get('coverage_start', defaults.get('coverage_start', 1.0))),
-        coverage_end=float(data['coverage_end']),
-        density_base=float(data['density_base']),
-        density_coefficient=float(data['density_coefficient']),
-        density_exponent=float(data.get('density_exponent')) if data.get('density_exponent') is not None else None,
-        selected_iteration_offset=int(data['selected_iteration_offset']),
-        description=str(data['description'])
-    )
-
-
-def _parse_global(data: Dict) -> GlobalConfig:
-    """Parse global configuration."""
-    return GlobalConfig(
-        n_agents_total=int(data['n_agents_total']),
-        coverage_noise_scale=float(data['noise_scaling']['coverage']),
-        density_noise_scale=float(data['noise_scaling']['density'])
-    )
-
-
-def _parse_scenario(scenario_type: ScenarioType, data: Dict, defaults: Dict = None) -> ScenarioConfig:
-    """Parse complete scenario configuration."""
+def _parse_scenario(scenario_type: ScenarioType, data: Dict, defaults: DefaultsConfig) -> ScenarioConfig:
+    """Parse complete scenario configuration with defaults applied."""
+    data = _apply_defaults(data, defaults)
+    
     return ScenarioConfig(
         scenario_type=scenario_type,
         description=data['description'],
-        prim_box=_parse_prim_box(data['prim_box'], defaults),
-        adoption=_parse_adoption(data['adoption']),
-        prim_trajectory=_parse_prim_trajectory(data['prim_trajectory'], defaults)
+        prim_box=PRIMBoxConfig(**data['prim_box']),
+        adoption=AdoptionFunctionConfig(**data['adoption']),
+        prim_trajectory=PRIMTrajectoryConfig(**data['prim_trajectory'])
     )
 
 
@@ -184,15 +158,19 @@ class ScenarioConfigLoader:
         
         config_data = _load_yaml_config(config_path)
         
-        # Parse global config
-        self._global_config = _parse_global(config_data.get('defaults', config_data.get('global', {})))
-        self._global_config.validate()
+        # Parse defaults (backward compatible with 'global' key)
+        defaults_data = config_data.get('defaults', config_data.get('global', {}))
+        defaults = DefaultsConfig(**defaults_data)
+        
+        # Create global config from defaults
+        self._global_config = GlobalConfig(
+            n_agents_total=defaults.n_agents_total,
+            noise_scaling=defaults.noise_scaling
+        )
         
         # Parse scenario configs
-        defaults = config_data.get('defaults', {})
         for scenario, key in SCENARIO_TO_KEY.items():
             scenario_config = _parse_scenario(scenario, config_data['scenarios'][key], defaults)
-            scenario_config.validate()
             self._config_cache[scenario] = scenario_config
     
     def get_config(self, scenario: ScenarioType) -> ScenarioConfig:
@@ -230,9 +208,11 @@ class ScenarioConfigLoader:
         self.load_config(config_path)
 
 
+# Singleton instance
 _loader = ScenarioConfigLoader()
 
 
+# Public API functions
 def get_scenario_config(scenario: ScenarioType) -> ScenarioConfig:
     """Get complete scenario configuration."""
     return _loader.get_config(scenario)

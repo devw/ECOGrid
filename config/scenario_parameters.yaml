@@ -1,7 +1,6 @@
-# Unified Scenario Configuration
-# All parameters for Monte Carlo generation
+# ECOGrid Scenario Configuration
+# Unified parameter file for Monte Carlo generation
 
-# Global defaults (applied to all scenarios unless overridden)
 defaults:
   trust_max: 1.0
   coverage_start: 1.0
@@ -12,7 +11,7 @@ defaults:
 
 scenarios:
   no_incentive:
-    description: "Baseline scenario - no policy intervention"
+    description: "Baseline - no policy intervention"
     
     prim_box:
       trust_min: 0.45
@@ -35,7 +34,7 @@ scenarios:
       description: "Flat trajectory - minimal peeling"
   
   services_incentive:
-    description: "Community services incentive - targets high trust & income"
+    description: "Community services - targets high trust & income"
     
     prim_box:
       trust_min: 0.60
@@ -60,7 +59,7 @@ scenarios:
       description: "Dramatic peeling - 100% to 6% coverage"
   
   economic_incentive:
-    description: "Economic subsidies - targets low income population"
+    description: "Economic subsidies - targets low income"
     
     prim_box:
       trust_min: 0.50
@@ -82,9 +81,3 @@ scenarios:
       density_exponent: 0.6
       selected_iteration_offset: -5
       description: "Moderate peeling - 100% to 31% coverage"
-
-# Validation rules (only truly variable constraints)
-validation:
-  income_range: [0.0, 100.0]
-  threshold_range: [0.0, 1.0]
-  base_rate_range: [0.0, 1.0]
