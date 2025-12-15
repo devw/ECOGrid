@@ -1,6 +1,4 @@
 # ECOGrid Scenario Configuration
-# Unified parameter file for Monte Carlo generation
-
 defaults:
   trust_max: 1.0
   coverage_start: 1.0
@@ -12,72 +10,65 @@ defaults:
 scenarios:
   no_incentive:
     description: "Baseline - no policy intervention"
-    
     prim_box:
-      trust_min: 0.45
+      trust_min: 0.35
       income_min: 60.0
       income_max: 100.0
       threshold: 0.25
-    
     adoption:
-      base_rate: 0.05
-      trust_coefficient: 0.08
-      trust_exponent: 1.0
+      base_rate: 0.012
+      trust_coefficient: 0.10
+      trust_exponent: 1.1
       income_coefficient: 0.30
-      income_exponent: 1.0
-    
+      income_exponent: 1.2
     prim_trajectory:
       coverage_end: 0.95
-      density_base: 0.20
+      density_base: 0.15
       density_coefficient: 0.0
       selected_iteration_offset: 0
       description: "Flat trajectory - minimal peeling"
-  
+
   services_incentive:
-    description: "Community services - targets high trust & income"
-    
+    description: "Community services incentive"
     prim_box:
-      trust_min: 0.60
-      income_min: 65.0
+      trust_min: 0.55
+      income_min: 60.0
       income_max: 100.0
       threshold: 0.5
-    
     adoption:
-      base_rate: 0.08
-      trust_coefficient: 0.22
-      trust_exponent: 1.8
-      income_threshold: 0.65
-      income_multiplier_high: 2.2
+      base_rate: 0.10               # leggermente ridotto per abbassare SI
+      trust_coefficient: 0.28
+      trust_exponent: 2.0
+      income_threshold: 0.60
+      income_multiplier_high: 3.0   # ridotto da 3.5
       income_multiplier_low: 0.5
-    
     prim_trajectory:
-      coverage_end: 0.06
-      density_base: 0.30
-      density_coefficient: 0.51
+      coverage_end: 0.12
+      density_base: 0.28
+      density_coefficient: 0.50
       density_exponent: 0.8
       selected_iteration_offset: -3
-      description: "Dramatic peeling - 100% to 6% coverage"
-  
+      description: "Moderate peeling"
+
   economic_incentive:
-    description: "Economic subsidies - targets low income"
-    
+    description: "Economic subsidies"
     prim_box:
-      trust_min: 0.50
+      trust_min: 0.30                    # ⬇️ Da 0.35 - cattura più L basso trust
       income_min: 0.0
-      income_max: 30.0
-      threshold: 0.35
-    
+      income_max: 32.0                   # ⬇️ Da 35.0 - MIRATO solo a L (0-33)
+      threshold: 0.45                    # ⬆️ Da 0.35 - PIÙ SELETTIVO
     adoption:
-      base_rate: 0.32
-      trust_coefficient: 0.15
-      trust_exponent: 1.0
-      income_coefficient: -0.25
-      income_exponent: 1.0
-    
+      base_rate: 0.42                    # ⬇️ Da 0.48 - riduce Avg generale
+      trust_coefficient: 0.15            # ⬇️ Da 0.18 - meno peso a trust
+      trust_exponent: 0.95               # ⬇️ Da 1.0
+      income_coefficient: -0.35          # ⬇️ Da -0.20 - penalizza più M/H
+      income_exponent: 1.5               # ⬆️ Da 1.3 - amplifica differenze
+      income_multiplier_low: 5.5         # ⬆️ Da 4.8 - BOOST MASSIMO per L
+      income_multiplier_high: 2.2        # ⬇️ Da 2.5 - riduci H
     prim_trajectory:
-      coverage_end: 0.31
-      density_base: 0.25
-      density_coefficient: 0.40
-      density_exponent: 0.6
-      selected_iteration_offset: -5
-      description: "Moderate peeling - 100% to 31% coverage"
+      coverage_end: 0.28                 # ⬇️ Da 0.38 - BOX PIÙ PICCOLA
+      density_base: 0.45                 # ⬆️ Da 0.36 - PIÙ DENSA in L
+      density_coefficient: 0.60          # ⬆️ Da 0.48 - peeling forte
+      density_exponent: 0.50             # ⬇️ Da 0.60 - curva ripida
+      selected_iteration_offset: -8      # ⬇️ Da -5 - PEELING AGGRESSIVO
+      description: "Aggressive peeling - L-focused"

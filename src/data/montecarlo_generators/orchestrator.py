@@ -32,30 +32,21 @@ def generate_scenario_data(
     """
     random_state = np.random.RandomState(config.random_seed)
     
-    print(f"\n🔄 Generating data for scenario: {scenario.value}")
-    
     # Generate agents
-    print(f"  ├─ Generating {config.n_agents} agents...")
     agents = generate_agents(scenario, config.n_agents, random_state)
     
-    # Generate heatmap grid WITH replications
-    print(f"  ├─ Generating {config.n_bins}×{config.n_bins} heatmap grid "
-          f"({config.n_replications} replications)...")
     heatmap_grid, heatmap_replications = generate_heatmap_grid(
         scenario, config.n_bins, config.n_replications, config.noise_std, random_state
     )
     
     # Generate PRIM analysis
-    print(f"  ├─ Identifying PRIM boxes...")
     prim_boxes = generate_prim_boxes(scenario, agents, random_state)
     
     # Generate PRIM trajectory WITH replications
-    print(f"  ├─ Generating PRIM trajectory ({config.n_replications} replications)...")
     prim_trajectory_summary, prim_trajectory_replications = generate_prim_trajectory(
         scenario, 15, config.n_replications, config.noise_std, random_state
     )
     
-    print(f"  └─ Generating demographic profiles...")
     demographic_profiles = generate_demographic_profiles(scenario, agents, prim_boxes)
     
     return {
