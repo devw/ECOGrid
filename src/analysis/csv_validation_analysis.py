@@ -97,21 +97,18 @@ def print_summary(weighted, prim_res):
     for s in SCENARIOS:
         w, p = weighted[s], prim_res[s]
 
-        # Avg (aggregato)
         lo, hi = w['range']
         exp_avg = (lo + hi) / 2
         obs_avg = w['value']
         avg_icon = '✅' if w['alignment']['aligned'] else '❌'
 
-        # Target (fascia + valore ottenuto)
         exp_tgt, obs_tgt = p['expected'], p['target']
         tgt_icon = '✅' if p['correct'] else '❌'
-        tgt_val = p['adoption']
 
         tgt_str = (
-            f"Target {short.get(exp_tgt, exp_tgt)} obs={tgt_val:.1f}%"
+            f"Target exp={short.get(exp_tgt, exp_tgt)}"
             if p['correct']
-            else f"Target exp={exp_tgt} obs={obs_tgt} val={tgt_val:.1f}%"
+            else f"Target exp={exp_tgt} obs={obs_tgt}"
         )
 
         q, e = p['lift_q']
