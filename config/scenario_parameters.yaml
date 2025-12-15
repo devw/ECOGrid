@@ -1,0 +1,83 @@
+# ECOGrid Scenario Configuration
+# Unified parameter file for Monte Carlo generation
+
+defaults:
+  trust_max: 1.0
+  coverage_start: 1.0
+  n_agents_total: 10000
+  noise_scaling:
+    coverage: 0.01
+    density: 1.0
+
+scenarios:
+  no_incentive:
+    description: "Baseline - no policy intervention"
+    
+    prim_box:
+      trust_min: 0.45
+      income_min: 60.0
+      income_max: 100.0
+      threshold: 0.25
+    
+    adoption:
+      base_rate: 0.05
+      trust_coefficient: 0.08
+      trust_exponent: 1.0
+      income_coefficient: 0.30
+      income_exponent: 1.0
+    
+    prim_trajectory:
+      coverage_end: 0.95
+      density_base: 0.20
+      density_coefficient: 0.0
+      selected_iteration_offset: 0
+      description: "Flat trajectory - minimal peeling"
+  
+  services_incentive:
+    description: "Community services - targets high trust & income"
+    
+    prim_box:
+      trust_min: 0.60
+      income_min: 65.0
+      income_max: 100.0
+      threshold: 0.5
+    
+    adoption:
+      base_rate: 0.08
+      trust_coefficient: 0.22
+      trust_exponent: 1.8
+      income_threshold: 0.65
+      income_multiplier_high: 2.2
+      income_multiplier_low: 0.5
+    
+    prim_trajectory:
+      coverage_end: 0.06
+      density_base: 0.30
+      density_coefficient: 0.51
+      density_exponent: 0.8
+      selected_iteration_offset: -3
+      description: "Dramatic peeling - 100% to 6% coverage"
+  
+  economic_incentive:
+    description: "Economic subsidies - targets low income"
+    
+    prim_box:
+      trust_min: 0.50
+      income_min: 0.0
+      income_max: 30.0
+      threshold: 0.35
+    
+    adoption:
+      base_rate: 0.32
+      trust_coefficient: 0.15
+      trust_exponent: 1.0
+      income_coefficient: -0.25
+      income_exponent: 1.0
+    
+    prim_trajectory:
+      coverage_end: 0.31
+      density_base: 0.25
+      density_coefficient: 0.40
+      density_exponent: 0.6
+      selected_iteration_offset: -5
+      description: "Moderate peeling - 100% to 31% coverage"

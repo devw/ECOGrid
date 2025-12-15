@@ -35,23 +35,6 @@ ECOGrid follows modern software engineering principles to ensure maintainability
 
 Runtime parameters, model settings, and experiment controls are managed through YAML files in the `config/` directory.
 
-### 🔧 Base Configuration (`config/base.yaml`)
-
-```yaml
-simulation:
-  n_agents: 10000
-  n_steps: 365
-
-incentives:
-  economic_rate: 0.20
-  service_value: 100
-
-prim:
-  alpha: 0.05
-  threshold: 0.75
-  min_support: 0.05
-```
-
 ### 🧪 Dummy Data Configuration (`config/dummy_data.yaml`)
 
 ```yaml
