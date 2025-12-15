@@ -86,18 +86,6 @@ python -m src.scripts.validate_montecarlo_data
 
 ---
 
-## ⚙️ Configuration
-
-All generation parameters—agents, Trust/Income ranges, grid resolution, noise levels, replications—are defined in:
-
-```
-config/montecarlo_data.yaml
-```
-
-Modify this file to fully customize your MonteCarlo data pipeline.
-
----
-
 ## 📚 References
 
 * See **MonteCarlo Data Configuration** in the Architecture Guide.
