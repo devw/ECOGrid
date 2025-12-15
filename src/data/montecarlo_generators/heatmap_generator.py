@@ -6,6 +6,7 @@ Refactored from calibrated_generator.py
 from typing import List
 import numpy as np
 from scipy import stats
+from collections import defaultdict
 
 from src.data.schemas import (
     ScenarioType,
@@ -52,10 +53,11 @@ def aggregate_replications_to_grid(
 ) -> List[HeatmapGridSchema]:
     """
     Aggregate replications into grid with statistical metrics.
+    Handles cases where standard error is zero or NaN to avoid RuntimeWarning.
     """
-    from collections import defaultdict
     grouped = defaultdict(list)
 
+    # Group adoption rates by scenario/trust/income bin
     for rep in replications:
         key = (rep.scenario, rep.trust_bin, rep.income_bin)
         grouped[key].append(rep.adoption_rate)
@@ -67,12 +69,18 @@ def aggregate_replications_to_grid(
 
         mean_rate = np.mean(rates_array)
         std_dev = np.std(rates_array, ddof=1)
-        ci = stats.t.interval(
-            confidence=0.95,
-            df=n_reps - 1,
-            loc=mean_rate,
-            scale=stats.sem(rates_array)
-        )
+        scale = stats.sem(rates_array)
+
+        # Defensive: avoid NaN or zero scale
+        if np.isnan(scale) or scale == 0 or n_reps < 2:
+            ci_lower, ci_upper = mean_rate, mean_rate
+        else:
+            ci_lower, ci_upper = stats.t.interval(
+                confidence=0.95,
+                df=n_reps - 1,
+                loc=mean_rate,
+                scale=scale
+            )
 
         grid_data.append(HeatmapGridEnhancedSchema(
             scenario=scenario,
@@ -80,15 +88,13 @@ def aggregate_replications_to_grid(
             income_bin=income,
             adoption_rate=mean_rate,
             std_dev=std_dev,
-            ci_lower=ci[0],
-            ci_upper=ci[1],
+            ci_lower=ci_lower,
+            ci_upper=ci_upper,
             n_replications=n_reps,
             n_samples=500
         ))
 
     return grid_data
-
-
 def generate_heatmap_grid(
     scenario: ScenarioType,
     n_bins: int,

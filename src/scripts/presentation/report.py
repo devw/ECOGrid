@@ -74,10 +74,6 @@ def show_summary(summary: dict[str, Any] | Any) -> None:
         - For dict: key → output/filepath/description
         - For objects: attributes will be inspected
     """
-    line = "=" * 70
-    print("\n" + line)
-    print("✅ Process complete!")
-    print(line)
 
     print("\n📊 Summary:")
 
