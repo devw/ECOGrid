@@ -21,22 +21,18 @@ def by_scenario(df, fn):
 # --- build scenario row for tabulate ---
 def make_row(s, weighted, prim_res, brackets_res):
     w, p = weighted[s], prim_res[s]
-    lo, hi = w['range']
-    exp_avg, obs_avg = (lo+hi)/2, w['value']
+    lo, hi, val = w['range'][0], w['range'][1], w['value']
     avg_icon = '✅' if w['alignment']['aligned'] else '❌'
-    avg_str = f"{exp_avg:.1f}/{obs_avg:.1f} {avg_icon}"
+    avg_str = f"{(lo+hi)/2:.1f}(exp)/{val:.1f}(obs) {avg_icon}"
 
-    brs = ['Low (0-20K)','Middle (20-50K)','High (50-100K)']
+    brs = ['Low (0-20K)', 'Middle (20-50K)', 'High (50-100K)']
+    fmt_bracket = lambda d: (
+        (lambda a, r: f"{a:.1f} {'✅' if r[0] <= a <= r[1] else ''}")
+        (d['avg'], d['range']) if d else '-'
+    )
+    br_vals = [fmt_bracket(brackets_res.get(s, {}).get(b)) for b in brs]
+
     short = {'Low (0-20K)':'L','Middle (20-50K)':'M','High (50-100K)':'H'}
-    br_vals = []
-    for b in brs:
-        d = brackets_res.get(s, {}).get(b)
-        if d:
-            icon = '✅' if d['range'][0] <= d['avg'] <= d['range'][1] else ''
-            br_vals.append(f"{d['avg']:.1f} {icon}")
-        else:
-            br_vals.append('-')
-
     tgt_icon = '✅' if p['correct'] else '❌'
     lift_str = f"{p['lift']:.2f}x {p['lift_q'][1]} {p['lift_q'][0]}"
     target_str = short.get(p['expected'], p['expected']) + ' ' + tgt_icon
