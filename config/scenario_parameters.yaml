@@ -1,7 +1,4 @@
 # ECOGrid Scenario Configuration
-# Unified parameter file for Monte Carlo generation
-# Calibrated for Italian context: 40% population <20K, low institutional trust (0.35-0.45)
-
 defaults:
   trust_max: 1.0
   coverage_start: 1.0
@@ -12,73 +9,66 @@ defaults:
 
 scenarios:
   no_incentive:
-    description: "Baseline - no policy intervention (Italian context: 12-20% low-income adoption)"
-    
+    description: "Baseline - no policy intervention"
     prim_box:
-      trust_min: 0.35          # Abbassato da 0.45 per riflettere bassa fiducia italiana
+      trust_min: 0.35
       income_min: 60.0
       income_max: 100.0
       threshold: 0.25
-    
     adoption:
-      base_rate: 0.012          # ↓ leggero (0.015 → 0.012)
-      trust_coefficient: 0.10   # ↓ (0.12 → 0.10)
-      trust_exponent: 1.1       # ↓ (1.2 → 1.1)
-      income_coefficient: 0.30  # ↓ (0.40 → 0.30)
-      income_exponent: 1.2      # ↓ (1.3 → 1.2)
-    
+      base_rate: 0.012
+      trust_coefficient: 0.10
+      trust_exponent: 1.1
+      income_coefficient: 0.30
+      income_exponent: 1.2
     prim_trajectory:
       coverage_end: 0.95
-      density_base: 0.15        # Ridotto da 0.20
+      density_base: 0.15
       density_coefficient: 0.0
       selected_iteration_offset: 0
       description: "Flat trajectory - minimal peeling"
-  
+
   services_incentive:
-    description: "Community services (Italian context: 10-18% low-income adoption)"
-    
+    description: "Community services incentive"
     prim_box:
-      trust_min: 0.55          # Ridotto da 0.60
-      income_min: 65.0
+      trust_min: 0.55
+      income_min: 60.0
       income_max: 100.0
       threshold: 0.5
-    
     adoption:
-      base_rate: 0.04          # Ridotto da 0.08
-      trust_coefficient: 0.28   # Aumentato da 0.22 per maggiore dipendenza da fiducia
-      trust_exponent: 2.0       # Aumentato da 1.8
-      income_threshold: 0.65
-      income_multiplier_high: 1.8  # Ridotto da 2.2 per abbassare adozione high-income
-      income_multiplier_low: 0.4   # Ridotto da 0.5 per riflettere target 10-18%
-    
+      base_rate: 0.10               # leggermente ridotto per abbassare SI
+      trust_coefficient: 0.28
+      trust_exponent: 2.0
+      income_threshold: 0.60
+      income_multiplier_high: 3.0   # ridotto da 3.5
+      income_multiplier_low: 0.5
     prim_trajectory:
-      coverage_end: 0.06
-      density_base: 0.25        # Ridotto da 0.30
-      density_coefficient: 0.51
+      coverage_end: 0.12
+      density_base: 0.28
+      density_coefficient: 0.50
       density_exponent: 0.8
       selected_iteration_offset: -3
-      description: "Dramatic peeling - 100% to 6% coverage"
-  
+      description: "Moderate peeling"
+
   economic_incentive:
-    description: "Economic subsidies (Italian context: 25-35% low-income adoption)"
-    
+    description: "Economic subsidies"
     prim_box:
-      trust_min: 0.35          # Ridotto da 0.50 per includere popolazione a bassa fiducia
+      trust_min: 0.35
       income_min: 0.0
       income_max: 30.0
-      threshold: 0.30          # Ridotto da 0.35
-    
+      threshold: 0.30
     adoption:
-      base_rate: 0.31              # ↑ (0.28 → 0.30)
-      trust_coefficient: 0.16      # ↓ leggero (0.18 → 0.16)
-      trust_exponent: 0.9          # ↓ (1.0 → 0.9)
-      income_coefficient: -0.28    # ↓ penalizzazione high-income
-      income_exponent: 1.1         # ↓ smoothing
-    
+      base_rate: 0.38                # aumento per alzare EI
+      trust_coefficient: 0.18
+      trust_exponent: 1.0
+      income_coefficient: -0.25
+      income_exponent: 1.2
+      income_multiplier_low: 2.8      # aumenta L per alzare EI
+      income_multiplier_high: 2.2     # aumenta H per alzare EI
     prim_trajectory:
-      coverage_end: 0.31
-      density_base: 0.28        # Aumentato da 0.25
-      density_coefficient: 0.40
+      coverage_end: 0.35               # leggermente più alto per EI
+      density_base: 0.33
+      density_coefficient: 0.42
       density_exponent: 0.6
       selected_iteration_offset: -5
-      description: "Moderate peeling - 100% to 31% coverage"
+      description: "Moderate peeling - balanced adoption"
