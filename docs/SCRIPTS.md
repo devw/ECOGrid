@@ -48,7 +48,7 @@ python -m src.experiments.run_sensitivity
 ### **CSV Validation & Summary**
 
 ```bash
-python src/analysis/csv_validation_analysis.py
+python src/analysis/csv_validation_analysis.py -d data/montecarlo_calibrated_fixed
 ```
 
 Sample output:

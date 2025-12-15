@@ -21,11 +21,11 @@ scenarios:
       threshold: 0.25
     
     adoption:
-      base_rate: 0.02          # Ridotto da 0.05 per abbassare adozione generale
+      base_rate: 0.015         # Ridotto da 0.05 per abbassare adozione generale
       trust_coefficient: 0.12   # Aumentato da 0.08 per dare più peso alla fiducia
       trust_exponent: 1.2       # Aumentato da 1.0 per enfatizzare effetto fiducia
-      income_coefficient: 0.35  # Aumentato da 0.30 per maggiore stratificazione
-      income_exponent: 1.2      # Aumentato da 1.0 per effetto più pronunciato
+      income_coefficient: 0.4  # Aumentato da 0.30 per maggiore stratificazione
+      income_exponent: 1.3      # Aumentato da 1.0 per effetto più pronunciato
     
     prim_trajectory:
       coverage_end: 0.95

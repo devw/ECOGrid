@@ -2,31 +2,29 @@
 CSV Data Analysis: Comparison with Theoretical Targets
 """
 
+import argparse
 import pandas as pd
 from pathlib import Path
 
 SCENARIOS = ['NI', 'EI', 'SI']
 
-THEORETICAL_DATA = {
-    'NI': {'weighted_avg': (14, 20), 'expected_target': 'High (50-100K)',
-           'income_brackets': {
-               'Low (0-20K)': (8, 15),
-               'Middle (20-50K)': (15, 22),
-               'High (50-100K)': (20, 28)}},
-    'EI': {'weighted_avg': (29, 40), 'expected_target': 'Low (0-20K)',
-           'income_brackets': {
-               'Low (0-20K)': (30, 40),
-               'Middle (20-50K)': (28, 38),
-               'High (50-100K)': (30, 42)}},
-    'SI': {'weighted_avg': (20, 30), 'expected_target': 'High (50-100K)',
-           'income_brackets': {
-               'Low (0-20K)': (12, 20),
-               'Middle (20-50K)': (18, 28),
-               'High (50-100K)': (35, 48)}}
+THEORY = {
+    'NI': dict(
+        weighted=(14, 20), target='High (50-100K)',
+        brackets={'Low (0-20K)': (8, 15), 'Middle (20-50K)': (15, 22), 'High (50-100K)': (20, 28)}
+    ),
+    'EI': dict(
+        weighted=(29, 40), target='Low (0-20K)',
+        brackets={'Low (0-20K)': (30, 40), 'Middle (20-50K)': (28, 38), 'High (50-100K)': (30, 42)}
+    ),
+    'SI': dict(
+        weighted=(20, 30), target='High (50-100K)',
+        brackets={'Low (0-20K)': (12, 20), 'Middle (20-50K)': (18, 28), 'High (50-100K)': (35, 48)}
+    )
 }
 
-LIFT_QUALITY = [(1.10, 'Poor', '❌'), (1.50, 'Moderate', '⚠️'),
-                (2.00, 'Good', '✅'), (float('inf'), 'Excellent', '⭐')]
+LIFT_Q = [(1.10, 'Poor', '❌'), (1.50, 'Moderate', '⚠️'),
+          (2.00, 'Good', '✅'), (float('inf'), 'Excellent', '⭐')]
 
 income_bracket = lambda x: (
     'Low (0-20K)' if x < 20 else
@@ -34,71 +32,105 @@ income_bracket = lambda x: (
     'High (50-100K)'
 )
 
-def check_alignment(v, r):
-    lo, hi = r
-    if lo <= v <= hi:
-        pos = ['Lower third', 'Center', 'Upper third'][int(3*(v-lo)/(hi-lo))]
-        return dict(aligned=True, gap=0, position=pos)
-    return dict(aligned=False, gap=v-(lo if v < lo else hi),
-                position='Below' if v < lo else 'Above')
+align = lambda v, r: (
+    {'aligned': True, 'gap': 0,
+     'position': ['Lower third', 'Center', 'Upper third'][int(3*(v-r[0])/(r[1]-r[0]))]}
+    if r[0] <= v <= r[1]
+    else {'aligned': False, 'gap': v-(r[0] if v < r[0] else r[1]),
+          'position': 'Below' if v < r[0] else 'Above'}
+)
 
-def lift_quality(v):
-    return next((q, e) for t, q, e in LIFT_QUALITY if v < t)
+lift_quality = lambda v: next((q, e) for t, q, e in LIFT_Q if v < t)
 
-def load_data(base='data/montecarlo_calibrated_fixed'):
-    p = Path(base)
-    return (pd.read_csv(p/'heatmap_grid.csv'),
-            pd.read_csv(p/'prim_boxes.csv'))
+load = lambda d: map(pd.read_csv, (Path(d)/f for f in ('heatmap_grid.csv', 'prim_boxes.csv')))
 
-def analyze_by_scenario(df, fn):
-    return {s: fn(df[df.scenario == s], s) for s in SCENARIOS}
+by_scenario = lambda df, fn: {s: fn(df[df.scenario == s], s) for s in SCENARIOS}
 
 def analyze_weighted(df, s):
-    avg = df.adoption_rate.mean() * 100
-    r = THEORETICAL_DATA[s]['weighted_avg']
-    return dict(value=avg, range=r, alignment=check_alignment(avg, r))
+    v = df.adoption_rate.mean() * 100
+    r = THEORY[s]['weighted']
+    return dict(value=v, range=r, alignment=align(v, r))
 
 def analyze_brackets(df, s):
-    df = df.assign(bracket=df.income_bin.map(income_bracket))
+    df = df.assign(b=df.income_bin.map(income_bracket))
     return {
-        b: (lambda d: None if d.empty else {
-            'avg': d.adoption_rate.mean()*100,
+        k: None if (d := df[df.b == k]).empty else {
+            'avg': (v := d.adoption_rate.mean() * 100),
             'n': len(d),
-            'alignment': check_alignment(d.adoption_rate.mean()*100, r)
-        })(df[df.bracket == b])
-        for b, r in THEORETICAL_DATA[s]['income_brackets'].items()
+            'alignment': align(v, r)
+        }
+        for k, r in THEORY[s]['brackets'].items()
     }
 
 def analyze_prim(prim, heatmap):
-    def _one(df, s):
+    def one(df, s):
         box = prim[prim.scenario == s].iloc[0]
         avg = df.adoption_rate.mean() * 100
         adopt = avg * box.lift
         bracket = (
-            'All brackets (no segmentation)' if (box.income_min, box.income_max) == (0, 100)
+            'All brackets (no segmentation)'
+            if (box.income_min, box.income_max) == (0, 100)
             else income_bracket(box.income_min)
         )
-        tq = THEORETICAL_DATA[s]['income_brackets'].get(bracket)
-        return {
-            'target': bracket,
-            'expected': THEORETICAL_DATA[s]['expected_target'],
-            'correct': bracket == THEORETICAL_DATA[s]['expected_target'],
-            'lift': box.lift,
-            'lift_q': lift_quality(box.lift),
-            'adoption': adopt,
-            'alignment': check_alignment(adopt, tq) if tq else None,
-            'coverage': box.coverage*100,
-            'density': box.density*100
-        }
-    return analyze_by_scenario(heatmap, _one)
+        r = THEORY[s]['brackets'].get(bracket)
+        return dict(
+            target=bracket,
+            expected=THEORY[s]['target'],
+            correct=bracket == THEORY[s]['target'],
+            lift=box.lift,
+            lift_q=lift_quality(box.lift),
+            adoption=adopt,
+            alignment=align(adopt, r) if r else None,
+            coverage=box.coverage * 100,
+            density=box.density * 100
+        )
+    return by_scenario(heatmap, one)
 
-def main():
-    heatmap, prim = load_data()
-    weighted = analyze_by_scenario(heatmap, analyze_weighted)
-    brackets = analyze_by_scenario(heatmap, analyze_brackets)
+def print_summary(weighted, prim_res):
+    short = {
+        'Low (0-20K)': 'L',
+        'Middle (20-50K)': 'M',
+        'High (50-100K)': 'H'
+    }
+
+    print("\n📊 SUMMARY\n" + "-" * 60)
+    for s in SCENARIOS:
+        w, p = weighted[s], prim_res[s]
+
+        # Avg (aggregato)
+        lo, hi = w['range']
+        exp_avg = (lo + hi) / 2
+        obs_avg = w['value']
+        avg_icon = '✅' if w['alignment']['aligned'] else '❌'
+
+        # Target (fascia + valore ottenuto)
+        exp_tgt, obs_tgt = p['expected'], p['target']
+        tgt_icon = '✅' if p['correct'] else '❌'
+        tgt_val = p['adoption']
+
+        tgt_str = (
+            f"Target {short.get(exp_tgt, exp_tgt)} obs={tgt_val:.1f}%"
+            if p['correct']
+            else f"Target exp={exp_tgt} obs={obs_tgt} val={tgt_val:.1f}%"
+        )
+
+        q, e = p['lift_q']
+
+        print(
+            f"{s}: "
+            f"Avg exp={exp_avg:.1f} obs={obs_avg:.1f} {avg_icon} | "
+            f"{tgt_str} {tgt_icon} | "
+            f"LIFT {p['lift']:.2f}x {e} {q}"
+        )
+
+def main(base_dir):
+    heatmap, prim = load(base_dir)
+    weighted = by_scenario(heatmap, analyze_weighted)
     prim_res = analyze_prim(prim, heatmap)
-    print_summary_table(weighted, prim)
+    print_summary(weighted, prim_res)
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', default='data/montecarlo_calibrated_fixed')
+    main(ap.parse_args().d)
