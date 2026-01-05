@@ -133,7 +133,7 @@ def write_latex(df, output_path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text('\n'.join(lines))
     print(f"📄 LaTeX saved: {output_path}")
-    
+
 def write_markdown(df, output_path):
     caption = (
         "**Patient Rule Induction Method (PRIM) Subgroup Analysis:**\n"
@@ -151,19 +151,31 @@ def write_markdown(df, output_path):
 # Main
 # ----------------------------------------------------
 
-def generate_demographic_table(csv_path, summary_csv_path, raw_csv_path, output_path):
+
+def generate_demographic_table(csv_path, summary_csv_path, raw_csv_path, output_dir: Path):
+    """
+    Generate demographic table in LaTeX and Markdown.
+    Output filenames are hardcoded.
+    """
     df = prepare_table(csv_path, summary_csv_path, raw_csv_path)
-    write_markdown(df, output_path.with_suffix('.md'))
-    write_latex(df, output_path.with_suffix('.tex'))
+
+    latex_path = output_dir / "demographic_profiles.tex"
+    md_path = output_dir / "demographic_profiles.md"
+
+    write_latex(df, latex_path)
+    write_markdown(df, md_path)
+
 
 if __name__ == "__main__":
     safe_run(lambda: (
-        (args := base_parser(defaults={"output": Path("/tmp/demographic_profiles.md")}).parse_args()),
+        (args := base_parser(defaults={"output_dir": Path("/tmp")}).parse_args()),
         (data_dir := Path(args.data_dir)) or (lambda: (_ for _ in ()).throw(ValueError("❌ --data-dir required")))(),
+        (output_dir := Path(args.output_dir)),
+        output_dir.mkdir(parents=True, exist_ok=True),
         generate_demographic_table(
             csv_path=data_dir / "demographic_profiles.csv",
             summary_csv_path=data_dir / "prim_trajectory_summary.csv",
             raw_csv_path=data_dir / "prim_trajectory_raw.csv",
-            output_path=Path(args.output)
+            output_dir=output_dir
         )
     ))

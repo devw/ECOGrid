@@ -39,8 +39,7 @@ python -m src.visualization.prim_trajectory --data-dir data/montecarlo --output 
 ### 📝 Demographic Table
 
 ```bash
-python -m src.visualization.demographic_table --data-dir data/montecarlo --output /tmp/demographic_profiles.md
-```
+python -m src.visualization.demographic_table --data-dir data/montecarlo --output /tmp/
 
 ---
 
