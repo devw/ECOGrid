@@ -1,9 +1,10 @@
 from pathlib import Path
 import pandas as pd
 from textwrap import dedent
+from ._utils.demographic_table_config import DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION
 
 def escape_latex(val):
-    """Escape caratteri speciali LaTeX e formatta numeri"""
+    """Escape LaTeX special characters and format numeric values."""
     if pd.isna(val):
         return ""
     s = str(val)
@@ -14,44 +15,37 @@ def escape_latex(val):
     except Exception:
         return s
 
-
 def render_latex_table(df: pd.DataFrame, output_path: Path):
     """
-    Scrive LaTeX table per demographic table.
-    Formatta numeri e usa colonne già numeriche.
+    Render a demographic table as LaTeX.
+
+    - Columns and order are taken from DEMOGRAPHIC_TABLE_COLUMNS / ORDER.
+    - Effect Size CI is formatted as [lower, upper].
+    - p-values <0.001 are shown as "<0.001".
     """
-    column_mapping = {
-        "scenario": "Scenario",
-        "coverage": "Coverage",
-        "density": "Density",
-        "density_sd": "SD (Density)",
-        "lift": "Lift",
-        "effect_size_d": "Effect Size (d)",
-        "effect_ci_lower": "95% CI*",
-        "effect_ci_upper": "95% CI*",
-        "p_value": "p-value†",
-        "stability": "Stability",
-        "n_segment": "n_segment"
-    }
+    # Rename and reorder columns
+    df_out = df.rename(columns=DEMOGRAPHIC_TABLE_COLUMNS)[DEMOGRAPHIC_TABLE_ORDER]
 
-    df_out = df.rename(columns=column_mapping)
-    df_out = df_out[list(column_mapping.values())]
-
-    col_headers = list(column_mapping.values())
-
-    # costruzione righe
+    col_headers = DEMOGRAPHIC_TABLE_ORDER
+    n_cols = len(col_headers)
+    
     lines = [
         r'\begin{table*}[htbp]',
         r'\centering',
         r'\small',
-        r'\begin{tabular}{|' + '|'.join(['l'] + ['c']*(len(col_headers)-1)) + '|}',
+        r'\begin{tabular}{|' + '|'.join(['l'] + ['c']*(n_cols-1)) + '|}',
         r'\hline',
         ' & '.join(col_headers) + r' \\',
         r'\hline'
     ]
 
     for _, row in df.iterrows():
-        ci = f"[{row['effect_ci_lower']:.2f}, {row['effect_ci_upper']:.2f}]" if pd.notna(row['effect_ci_lower']) else "n/a"
+        # Cohen's d CI
+        ci = (
+            f"[{row['effect_ci_lower']:.2f}, {row['effect_ci_upper']:.2f}]"
+            if pd.notna(row['effect_ci_lower']) else "n/a"
+        )
+        # p-value formatting
         pval = "<0.001" if row["p_value"] < 0.001 else f"{row['p_value']:.3f}"
         cells = [
             escape_latex(row["scenario"]),
@@ -70,8 +64,8 @@ def render_latex_table(df: pd.DataFrame, output_path: Path):
     lines += [
         r'\hline',
         r'\end{tabular}',
-        dedent(r"""
-        \caption{Demographic table. Effect Size (Cohen's d) vs baseline NI. *95% CI from bootstrap. †p-value vs baseline.}
+        dedent(f"""
+        \\caption{{{DEMOGRAPHIC_TABLE_CAPTION}}}
         """).strip(),
         r'\end{table*}'
     ]
