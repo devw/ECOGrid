@@ -76,9 +76,9 @@ python -m src.visualization.<script_name>
 Examples:
 
 ```bash
-python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo_calibrated_fixed --output /tmp/income_trust_heatmap.png
-python -m src.visualization.prim_trajectory --data-dir data/montecarlo_calibrated_fixed --output /tmp/prim-peeling-trajectory.png
-python -m src.scripts.presentation.generate_demographic_table --data-dir data/montecarlo_calibrated_fixed --output /tmp/
+python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarlo_calibrated_fixed --output /tmp/adoption_montecarlo.png
+python -m src.visualization.prim_trajectory --data-dir data/montecarlo_calibrated_fixed --output /tmp/prim_trajectory.png
+python -m src.visualization.demographic_table --data-dir data/montecarlo_calibrated_fixed --output /tmp/demographic_profiles.md
 ```
 
 ---
