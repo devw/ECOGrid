@@ -20,10 +20,24 @@ def render_latex_table(df: pd.DataFrame, output_path: Path):
     Scrive LaTeX table per demographic table.
     Formatta numeri e usa colonne già numeriche.
     """
-    col_headers = [
-        "Scenario", "Coverage", "Density", "SD (Density)", "Lift",
-        "Effect Size (d)", "95% CI*", "p-value†", "Stability", "n_segment"
-    ]
+    column_mapping = {
+        "scenario": "Scenario",
+        "coverage": "Coverage",
+        "density": "Density",
+        "density_sd": "SD (Density)",
+        "lift": "Lift",
+        "effect_size_d": "Effect Size (d)",
+        "effect_ci_lower": "95% CI*",
+        "effect_ci_upper": "95% CI*",
+        "p_value": "p-value†",
+        "stability": "Stability",
+        "n_segment": "n_segment"
+    }
+
+    df_out = df.rename(columns=column_mapping)
+    df_out = df_out[list(column_mapping.values())]
+
+    col_headers = list(column_mapping.values())
 
     # costruzione righe
     lines = [
