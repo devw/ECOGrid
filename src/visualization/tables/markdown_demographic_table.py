@@ -2,30 +2,31 @@ from pathlib import Path
 import pandas as pd
 
 def render_markdown_table(df: pd.DataFrame, output_path: Path):
-    """
-    Scrive Markdown table per demographic table.
-    Formatta numeri secondo lo stesso schema del LaTeX.
-    """
-    df_out = df.copy()
-    df_out["Effect Size (d)"] = df_out["effect_size_d"].apply(lambda x: "n/a" if pd.isna(x) else f"{x:.2f}")
-    df_out["95% CI*"] = df_out.apply(
-        lambda r: f"[{r['effect_ci_lower']:.2f}, {r['effect_ci_upper']:.2f}]" if pd.notna(r['effect_ci_lower']) else "n/a",
-        axis=1
+    column_mapping = {
+        "scenario": "Scenario",
+        "coverage": "Coverage",
+        "density": "Density",
+        "density_sd": "SD (Density)",
+        "lift": "Lift",
+        "effect_size_d": "Effect Size (d)",
+        "effect_ci_lower": "95% CI*",
+        "effect_ci_upper": "95% CI*",
+        "p_value": "p-value†",
+        "stability": "Stability",
+        "n_segment": "n_segment"
+    }
+    
+    df_out = df.rename(columns=column_mapping)
+    df_out = df_out[list(column_mapping.values())]
+
+    caption = (
+        "**Patient Rule Induction Method (PRIM) Subgroup Analysis:**\n"
+        "Demographic profiles of high-adoption segments across policy scenarios.\n"
+        "Segment codes: NI = Baseline Population (No Segmentation), SI = High Trust Community (Trust ≥ 0.65), EI = High Trust + Mid-High Income (Trust ≥ 0.55, Income ≥ 30).\n"
+        "Stability reflects the average proportion of replications where the subgroup is selected.\n"
+        "Effect sizes (Cohen's d) quantify the magnitude of difference in adoption density relative to the NI baseline.\n"
+        "Thresholds: negligible (<0.2), small (0.2–0.5), medium (0.5–0.8), large (>0.8).\n"
     )
-    df_out["p-value†"] = df_out["p_value"].apply(lambda x: "<0.001" if x < 0.001 else f"{x:.3f}")
-    df_out["Coverage"] = df_out["coverage"].apply(lambda x: f"{x:.2f}")
-    df_out["Density"] = df_out["density"].apply(lambda x: f"{x:.2f}")
-    df_out["SD (Density)"] = df_out["density_sd"].apply(lambda x: f"{x:.2f}")
-    df_out["Lift"] = df_out["lift"].apply(lambda x: f"{x:.2f}")
-    df_out["Stability"] = df_out["stability"].apply(lambda x: f"{x:.2f}")
-    df_out["n_segment"] = df_out["n_segment"].apply(int)
-
-    columns = ["scenario", "Coverage", "Density", "SD (Density)", "Lift",
-               "Effect Size (d)", "95% CI*", "p-value†", "Stability", "n_segment"]
-
-    df_out = df_out.rename(columns={"scenario": "Scenario"})
-    df_out = df_out[columns]
-
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text("**Demographic Table:**\n\n" + df_out.to_markdown(index=False))
+    output_path.write_text(caption + "\n" + df_out.to_markdown(index=False))
     print(f"📄 Markdown saved: {output_path}")

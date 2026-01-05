@@ -29,7 +29,8 @@ def build_demographic_table(
     # Calcolo SD (density) per ogni scenario
     density_sd_map = {}
     for scenario in df_raw["scenario"].unique():
-        adoption = df_raw.loc[df_raw["scenario"] == scenario, "is_adopted"].values
+        adoption = df_raw.loc[df_raw["scenario"] == scenario, "is_selected"].astype(int).values
+
         p = adoption.mean()
         density_sd_map[scenario] = np.sqrt(p*(1-p))
 
