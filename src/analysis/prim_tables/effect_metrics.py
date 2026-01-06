@@ -1,6 +1,7 @@
 from typing import Optional
 import pandas as pd
 import numpy as np
+from scipy import stats
 
 # ----------------------------------------------------
 # Metriche statistiche base
@@ -18,14 +19,28 @@ def compute_stability(raw_df: pd.DataFrame, scenario: str) -> float:
 
 def compute_pvalue(raw_df: pd.DataFrame, baseline_density: float, scenario: str) -> float:
     """
-    Calcola il p-value empirico confrontando la densità dello scenario con il baseline.
+    Calcola il p-value usando t-test a due code tra scenario e baseline.
     
-    raw_df: DataFrame con colonne ["scenario", "density"]
-    baseline_density: densità media del baseline scenario
+    FIXED: Aggrega per replication_id per evitare pseudo-replicazione Monte Carlo
+    
+    raw_df: DataFrame con colonne ["scenario", "replication_id", "density"]
+    baseline_density: densità media del baseline scenario (non usata, viene ricalcolata)
     scenario: scenario da valutare
     """
-    densities = raw_df.loc[raw_df["scenario"] == scenario, "density"].values
-    return max((densities <= baseline_density).mean(), 1e-4)
+    # Se scenario è il baseline stesso, p-value = 1.0
+    if scenario == "NI":
+        return 1.0
+    
+    # Aggrega densità per replication_id (evita pseudo-replicazione)
+    baseline_agg = raw_df[raw_df['scenario'] == 'NI'].groupby('replication_id')['density'].mean()
+    scenario_agg = raw_df[raw_df['scenario'] == scenario].groupby('replication_id')['density'].mean()
+    
+    # T-test a due code su dati aggregati
+    if len(baseline_agg) > 0 and len(scenario_agg) > 0:
+        t_stat, p_val = stats.ttest_ind(scenario_agg, baseline_agg)
+        return p_val
+    
+    return 1.0  # fallback se dati mancanti
 
 
 def compute_cohens_d(
