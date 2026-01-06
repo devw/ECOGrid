@@ -10,6 +10,8 @@ def format_pvalue(p: float) -> str:
     """Formatta p-value con notazione scientifica se < 0.001"""
     if pd.isna(p):
         return "n/a"
+    if p == 0.0 or p < 1e-300:  # ← Aggiungi questa condizione
+        return "<1e-300"
     if p < 0.001:
         return f"{p:.2e}"
     elif p < 0.01:
