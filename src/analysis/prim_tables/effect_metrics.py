@@ -1,6 +1,7 @@
 from typing import Optional
 import pandas as pd
 import numpy as np
+from scipy import stats
 
 # ----------------------------------------------------
 # Metriche statistiche base
@@ -18,14 +19,28 @@ def compute_stability(raw_df: pd.DataFrame, scenario: str) -> float:
 
 def compute_pvalue(raw_df: pd.DataFrame, baseline_density: float, scenario: str) -> float:
     """
-    Calcola il p-value empirico confrontando la densità dello scenario con il baseline.
+    Calcola il p-value usando t-test a due code tra scenario e baseline.
+    
+    FIXED: Usa t-test invece di conteggio empirico >= baseline_density
     
     raw_df: DataFrame con colonne ["scenario", "density"]
-    baseline_density: densità media del baseline scenario
+    baseline_density: densità media del baseline scenario (non usata, viene ricalcolata)
     scenario: scenario da valutare
     """
-    densities = raw_df.loc[raw_df["scenario"] == scenario, "density"].values
-    return max((densities <= baseline_density).mean(), 1e-4)
+    # Estrai densità per baseline e scenario
+    baseline_densities = raw_df.loc[raw_df["scenario"] == "NI", "density"].values
+    scenario_densities = raw_df.loc[raw_df["scenario"] == scenario, "density"].values
+    
+    # Se scenario è il baseline stesso, p-value = 1.0
+    if scenario == "NI":
+        return 1.0
+    
+    # T-test a due code
+    if len(baseline_densities) > 0 and len(scenario_densities) > 0:
+        t_stat, p_val = stats.ttest_ind(scenario_densities, baseline_densities)
+        return p_val
+    
+    return 1.0  # fallback se dati mancanti
 
 
 def compute_cohens_d(

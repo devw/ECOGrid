@@ -53,8 +53,11 @@ def render_latex_table(df: pd.DataFrame, output_path: Path):
     for _, r in df_out.iterrows():
         ci_lower, ci_upper = (f"{r.get(k, 'n/a'):.2f}" if pd.notna(r.get(k)) else "n/a" 
                               for k in ['95% CI* Lower', '95% CI* Upper'])
-        pval = (r'$<$0.001' if r.get("p-value†", 1) < 0.001 
-                else f"{r.get('p-value†', 0):.3f}")
+        
+        # FIXED: gestisce sia stringhe che numeri per p-value
+        pval = r.get("p-value†", "1.000")
+        if not isinstance(pval, str):  # Se è numero, formatta
+            pval = r'$<$0.001' if pval < 0.001 else f"{pval:.3f}"
         
         cells = [
             escape_latex(r["Scenario"]),
