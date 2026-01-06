@@ -46,9 +46,10 @@ def build_demographic_table(csv_path: Path, summary_csv_path: Path, raw_csv_path
             density_map[s] = selected_summary.loc[s, "density_mean"]
             density_sd_map[s] = selected_summary.loc[s, "density_std"]
         else:
-            # Fallback: usa demographic_profiles e SD = 0 (nessuna selezione)
+            # Fallback: usa demographic_profiles e SD da raw data
             density_map[s] = df_base.loc[df_base["scenario"] == s, "density"].values[0]
-            density_sd_map[s] = 0.0
+            raw_densities = df_raw[df_raw['scenario'] == s]['density']
+            density_sd_map[s] = raw_densities.std()
 
     # 2️⃣ Cohen's d e CI
     effect_map = {
