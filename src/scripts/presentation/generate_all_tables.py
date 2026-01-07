@@ -10,8 +10,11 @@ from pathlib import Path
 import sys
 
 from src.analysis.prim_tables.demographic_table_builder import build_demographic_table
+from src.analysis.prim_tables.aggregate_metrics_builder import build_aggregate_metrics_table
 from src.visualization.tables.latex_demographic_table import render_latex_table
 from src.visualization.tables.markdown_demographic_table import render_markdown_table
+from src.visualization.tables.markdown_aggregate_table import render_markdown_table as render_markdown_aggregate_table
+from src.visualization.tables.latex_aggregate_table import render_latex_table as render_latex_aggregate_table
 from src.utils.cli_parser import base_parser, safe_run
 
 
@@ -38,17 +41,21 @@ def generate_demographic_tables(data_dir: Path, output_dir: Path) -> None:
 
 
 def generate_aggregate_metrics_tables(data_dir: Path, output_dir: Path) -> None:
-    """Generate aggregate metrics by scenario tables (NEW - placeholder)."""
+    """Generate aggregate metrics by scenario tables."""
     print("📈 Generating aggregate metrics tables...")
-    print("  ⚠️  Not yet implemented - coming next!")
-    # TODO: Implement in next step
-    # from src.analysis.prim_tables.aggregate_metrics_builder import build_aggregate_metrics_table
-    # from src.visualization.tables.latex_aggregate_table import render_latex_aggregate_table
-    # from src.visualization.tables.markdown_aggregate_table import render_markdown_aggregate_table
-    #
-    # df = build_aggregate_metrics_table(data_dir)
-    # render_latex_aggregate_table(df, output_dir / "aggregate_metrics_by_scenario.tex")
-    # render_markdown_aggregate_table(df, output_dir / "aggregate_metrics_by_scenario.md")
+    
+    # Build DataFrame
+    df = build_aggregate_metrics_table(data_dir)
+    
+    # Render outputs
+    tex_path = output_dir / "aggregate_metrics_by_scenario.tex"
+    md_path = output_dir / "aggregate_metrics_by_scenario.md"
+    
+    render_latex_aggregate_table(df, tex_path)
+    render_markdown_aggregate_table(df, md_path)
+    
+    print(f"  ✅ {tex_path.absolute()}")
+    print(f"  ✅ {md_path.absolute()}")
 
 
 def main():
