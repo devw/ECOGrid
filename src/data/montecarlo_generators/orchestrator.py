@@ -33,7 +33,9 @@ def generate_scenario_data(
     random_state = np.random.RandomState(config.random_seed)
     
     # Generate agents
-    agents = generate_agents(scenario, config.n_agents, random_state)
+    agents = generate_agents(scenario, config.n_agents, random_state, config.noise_std)
+    adoption_rates = [a.adoption_rate for a in agents]
+    print(f"🔍 {scenario.value}: n={len(agents)}, mean_adoption={np.mean(adoption_rates):.3f}, std={np.std(adoption_rates):.3f}")
     
     heatmap_grid, heatmap_replications = generate_heatmap_grid(
         scenario, config.n_bins, config.n_replications, config.noise_std, random_state

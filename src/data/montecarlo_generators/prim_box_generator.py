@@ -1,11 +1,14 @@
 """
-PRIM Box Generation - Unified Config.
-Uses scenario_config for all parameters.
+PRIM Box Generation - FIXED VERSION.
+
+Key fixes:
+1. Uses agent.adoption_rate (includes noise) instead of recalculating
+2. Density = mean adoption rate (not binary threshold percentage)
+3. Consistent with demographic_generator.py calculations
 """
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 import numpy as np
 from src.data.schemas import ScenarioType, AgentSchema, PRIMBoxSchema
-from .adoption_functions import get_adoption_function
 from .scenario_config import get_prim_box_config
 
 
@@ -14,17 +17,23 @@ def _partition_agents_by_box(
     trust_min: float,
     trust_max: float,
     income_min: float,
-    income_max: float,
-    adoption_func: Callable[[float, float], float]
+    income_max: float
 ) -> Tuple[List[float], List[float]]:
-    """Single-pass agent partitioning."""
+    """
+    Single-pass agent partitioning.
+    
+    FIX: Uses agent.adoption_rate directly (includes noise and clipping).
+    """
     adoptions_in = []
     adoptions_out = []
     
     for agent in agents:
-        adoption = adoption_func(agent.trust, agent.income)
+        # Use pre-calculated adoption rate (includes noise)
+        adoption = agent.adoption_rate
+        
         in_box = (trust_min <= agent.trust <= trust_max and 
                   income_min <= agent.income <= income_max)
+        
         (adoptions_in if in_box else adoptions_out).append(adoption)
     
     return adoptions_in, adoptions_out
@@ -33,10 +42,13 @@ def _partition_agents_by_box(
 def _calculate_statistics(
     adoptions_in: List[float],
     adoptions_out: List[float],
-    threshold: float,
     n_total: int
 ) -> Tuple[float, float, float, float, float]:
-    """Calculate PRIM statistics."""
+    """
+    Calculate PRIM statistics.
+    
+    FIX: Density = mean adoption rate (not threshold-based percentage).
+    """
     n_in = len(adoptions_in)
     all_adoptions = adoptions_in + adoptions_out
     
@@ -44,9 +56,10 @@ def _calculate_statistics(
     avg_out = np.mean(adoptions_out) if adoptions_out else 0.0
     coverage = n_in / n_total if n_total > 0 else 0.0
     
-    high_in = sum(1 for a in adoptions_in if a >= threshold)
-    density = high_in / n_in if n_in > 0 else 0.0
+    # FIX: Density is simply the mean adoption rate inside the box
+    density = avg_in
     
+    # Lift: ratio of in-box adoption to overall adoption
     avg_all = np.mean(all_adoptions) if all_adoptions else 1.0
     lift = avg_in / avg_all if avg_all > 0 else 1.0
     
@@ -55,8 +68,7 @@ def _calculate_statistics(
 
 def identify_prim_box(
     scenario: ScenarioType,
-    agents: List[AgentSchema],
-    adoption_func: Callable[[float, float], float]
+    agents: List[AgentSchema]
 ) -> Tuple[float, float, float, float, float, float, float]:
     """Identify PRIM box from unified config."""
     config = get_prim_box_config(scenario)
@@ -66,14 +78,12 @@ def identify_prim_box(
         config.trust_min,
         config.trust_max,
         config.income_min,
-        config.income_max,
-        adoption_func
+        config.income_max
     )
     
     _, _, coverage, density, lift = _calculate_statistics(
         adoptions_in,
         adoptions_out,
-        config.threshold,
         len(agents)
     )
     
@@ -87,10 +97,13 @@ def generate_prim_boxes(
     agents: List[AgentSchema],
     random_state: np.random.RandomState
 ) -> List[PRIMBoxSchema]:
-    """Generate PRIM boxes for scenario."""
-    adoption_func = get_adoption_function(scenario)
+    """
+    Generate PRIM boxes for scenario.
+    
+    FIX: Removed unused adoption_func parameter and random_state usage.
+    """
     trust_min, trust_max, income_min, income_max, coverage, density, lift = \
-        identify_prim_box(scenario, agents, adoption_func)
+        identify_prim_box(scenario, agents)
     
     return [PRIMBoxSchema(
         scenario=scenario,

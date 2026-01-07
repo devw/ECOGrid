@@ -12,7 +12,7 @@ from ._config.settings import SCENARIOS, FONTSIZE_TITLE, SUPTITLE_Y, COLORBAR_Y_
 from ._processors.data_utils import scenario_grid
 from ._processors.stats_utils import compute_pairwise_significance
 from .plotting import HeatmapPlotter
-from ._utils.file_utils import load_csv_or_fail
+from src.utils.file_utils import load_csv_or_fail
 from ._processors.report_generator import print_analysis_report
 
 

@@ -1,4 +1,7 @@
-# ECOGrid Scenario Configuration
+# ECOGrid Scenario Configuration - FIXED VERSION
+# Goal: Realistic adoption rates with Cohen's d ≈ 0.8-1.2
+# Logic: Density(EI) ≥ Density(SI) ≥ Density(NI)
+
 defaults:
   trust_max: 1.0
   coverage_start: 1.0
@@ -8,6 +11,10 @@ defaults:
     density: 1.0
 
 scenarios:
+  # =============================================================================
+  # NO INCENTIVE: Baseline Scenario
+  # Expected density: ~0.30-0.35 (moderate adoption)
+  # =============================================================================
   no_incentive:
     description: "Baseline - no policy intervention"
     prim_box:
@@ -16,11 +23,11 @@ scenarios:
       income_max: 100.0
       threshold: 0.25
     adoption:
-      base_rate: 0.012
-      trust_coefficient: 0.10
-      trust_exponent: 1.1
-      income_coefficient: 0.30
-      income_exponent: 1.2
+      base_rate: 0.15                    # FIX: aumentato da 0.012 (baseline realistico)
+      trust_coefficient: 0.18            # FIX: aumentato da 0.10 (trust conta di più)
+      trust_exponent: 1.0                # FIX: lineare invece di 1.1
+      income_coefficient: 0.08           # FIX: ridotto da 0.30 (meno peso income)
+      income_exponent: 1.0               # FIX: lineare invece di 1.2
     prim_trajectory:
       coverage_end: 0.95
       density_base: 0.15
@@ -29,46 +36,46 @@ scenarios:
       description: "Flat trajectory - minimal peeling"
 
   services_incentive:
-    description: "Community services incentive"
+    description: "Community services incentive - rewards high trust"
     prim_box:
       trust_min: 0.55
       income_min: 60.0
       income_max: 100.0
       threshold: 0.5
     adoption:
-      base_rate: 0.07                    # ⬇️ da 0.10 (-30%)
-      trust_coefficient: 0.24            # ⬇️ da 0.28 (-14%)
-      trust_exponent: 1.9                # ⬇️ da 2.0 (riduce non-linearità)
-      income_threshold: 0.65             # ⬆️ da 0.60 (più restrittivo)
-      income_multiplier_high: 2.3        # ⬇️ da 3.0 (-23%)
-      income_multiplier_low: 0.5         # = mantieni
+      base_rate: 0.15                    # FIX: stesso baseline di NI
+      trust_coefficient: 0.35            # FIX: DOPPIO peso trust (da 0.24)
+      trust_exponent: 1.5                # FIX: non-linearità moderata (da 1.9)
+      income_threshold: 0.50             # FIX: soglia più bassa (da 0.65)
+      income_multiplier_high: 1.3        # FIX: bonus moderato 30% (da 2.3)
+      income_multiplier_low: 1.1         # FIX: bonus lieve 10% (da 0.5 = penalità!)
     prim_trajectory:
       coverage_end: 0.12
       density_base: 0.28
       density_coefficient: 0.50
       density_exponent: 0.8
       selected_iteration_offset: -3
-      description: "Moderate peeling"
+      description: "Moderate peeling - high trust segments"
 
   economic_incentive:
-    description: "Economic subsidies"
+    description: "Economic subsidies - progressive support for lower incomes"
     prim_box:
-      trust_min: 0.30                    # ⬇️ Da 0.35 - cattura più L basso trust
+      trust_min: 0.30
       income_min: 0.0
-      income_max: 32.0                   # ⬇️ Da 35.0 - MIRATO solo a L (0-33)
-      threshold: 0.45                    # ⬆️ Da 0.35 - PIÙ SELETTIVO
+      income_max: 35.0                   # Mantieni focus su basso reddito
+      threshold: 0.45
     adoption:
-      base_rate: 0.42                    # ⬇️ Da 0.48 - riduce Avg generale
-      trust_coefficient: 0.15            # ⬇️ Da 0.18 - meno peso a trust
-      trust_exponent: 0.95               # ⬇️ Da 1.0
-      income_coefficient: -0.35          # ⬇️ Da -0.20 - penalizza più M/H
-      income_exponent: 1.5               # ⬆️ Da 1.3 - amplifica differenze
-      income_multiplier_low: 5.5         # ⬆️ Da 4.8 - BOOST MASSIMO per L
-      income_multiplier_high: 2.2        # ⬇️ Da 2.5 - riduci H
+      base_rate: 0.20                    # FIX: baseline più alto (da 0.42)
+      trust_coefficient: 0.25            # FIX: peso trust aumentato (da 0.15)
+      trust_exponent: 1.0                # FIX: lineare (da 0.95)
+      income_coefficient: 0.25           # FIX: POSITIVO! Bonus per income (da -0.35)
+      income_exponent: 0.8               # FIX: sublineare (da 1.5), favorisce bassi income
+      # Rimuovi multiplier se usi coefficient (scegli una strategia)
     prim_trajectory:
-      coverage_end: 0.28                 # ⬇️ Da 0.38 - BOX PIÙ PICCOLA
-      density_base: 0.45                 # ⬆️ Da 0.36 - PIÙ DENSA in L
-      density_coefficient: 0.60          # ⬆️ Da 0.48 - peeling forte
-      density_exponent: 0.50             # ⬇️ Da 0.60 - curva ripida
-      selected_iteration_offset: -8      # ⬇️ Da -5 - PEELING AGGRESSIVO
-      description: "Aggressive peeling - L-focused"
+      coverage_end: 0.28
+      density_base: 0.45
+      density_coefficient: 0.60
+      density_exponent: 0.50
+      selected_iteration_offset: -8
+      description: "Aggressive peeling - income-focused"
+
