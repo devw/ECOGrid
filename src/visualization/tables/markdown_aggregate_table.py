@@ -3,6 +3,7 @@ Render aggregate metrics table in Markdown format.
 """
 from pathlib import Path
 import pandas as pd
+from ._utils.demographic_table_config import AGGREGATE_TABLE_CAPTION
 
 
 def format_percentage(value: float) -> str:
@@ -24,17 +25,6 @@ def format_int(value: float) -> str:
     if pd.isna(value):
         return "N/A"
     return f"{int(value)}"
-
-
-def generate_markdown_caption() -> str:
-    """Generate the caption/description for the table."""
-    return """**Aggregate Adoption Metrics by Policy Scenario:**
-Summary statistics of green energy adoption across demographic segments.
-Adoption rates are weighted by sample size across trust-income bins.
-Income brackets: Low (< 33rd percentile), High (≥ 67th percentile).
-Trust threshold: High trust defined as ≥ 0.64 (aligned with PRIM segmentation).
-Income Gap quantifies adoption inequality between high and low-income populations.
-Based on 100 Monte Carlo replications with 5,000 agents each."""
 
 
 def render_markdown_table(df: pd.DataFrame, output_path: Path) -> None:
@@ -63,7 +53,7 @@ def render_markdown_table(df: pd.DataFrame, output_path: Path) -> None:
     formatted_df = pd.DataFrame(formatted_rows)
     
     # Generate Markdown
-    caption = generate_markdown_caption()
+    caption = AGGREGATE_TABLE_CAPTION.replace(":", "\\:")
     table_md = formatted_df.to_markdown(index=False)
     
     # Combine caption and table

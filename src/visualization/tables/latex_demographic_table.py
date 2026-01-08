@@ -1,34 +1,7 @@
 from pathlib import Path
 import pandas as pd
-import re
-from ._utils.demographic_table_config import (
-    DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION
-)
-
-def escape_latex(val, is_header=False, is_text=False):
-    """Universal LaTeX escaper with context-aware replacements"""
-    if pd.isna(val): return ""
-    s = str(val)
-    
-    if is_text or is_header:
-        replacements = {
-            '≥': r'$\geq$', '≤': r'$\leq$', '–': '--', '—': '---',
-            '×': r'$\times$', '±': r'$\pm$', '<': r'$<$', '>': r'$>$',
-            '†': r'$\dagger$', '*': r'$^*$'
-        }
-        for char, repl in replacements.items():
-            s = s.replace(char, repl)
-        if is_text:
-            s = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', s)
-    
-    skip_dollar = is_header or is_text
-    for c in ['&', '#', '{', '}', '_', '%'] + ([] if skip_dollar else ['$']):
-        s = s.replace(c, f'\\{c}')
-    
-    if not (is_header or is_text):
-        try: return f"{float(val):.2f}"
-        except: pass
-    return s
+from ._utils.demographic_table_config import (DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION)
+from ._utils.latex import escape_latex
 
 def wrap_header(text: str) -> str:
     """Wrap long headers with \\makecell for multiline display"""

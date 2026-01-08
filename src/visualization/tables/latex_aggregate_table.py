@@ -3,6 +3,8 @@ Render aggregate metrics table in LaTeX format.
 """
 from pathlib import Path
 import pandas as pd
+from ._utils.demographic_table_config import AGGREGATE_TABLE_CAPTION
+from ._utils.latex import escape_latex
 
 
 def format_percentage(value: float) -> str:
@@ -17,12 +19,6 @@ def format_int(value: float) -> str:
     if pd.isna(value):
         return "N/A"
     return f"{int(value)}"
-
-
-def generate_latex_caption() -> str:
-    """Generate the LaTeX caption for the table."""
-    return r"""$^*$$^*$Aggregate Adoption Metrics by Policy Scenario:$^*$$^*$ Summary statistics of green energy adoption across demographic segments. Adoption rates are weighted by sample size across trust-income bins. Income brackets: Low ($<$ 33rd percentile), High ($\geq$ 67th percentile). Trust threshold: High trust defined as $\geq$ 0.64 (aligned with PRIM segmentation). Income Gap quantifies adoption inequality between high and low-income populations. Based on 100 Monte Carlo replications with 5,000 agents each."""
-
 
 def render_latex_table(df: pd.DataFrame, output_path: Path) -> None:
     """
@@ -50,7 +46,7 @@ def render_latex_table(df: pd.DataFrame, output_path: Path) -> None:
         )
     
     # Generate LaTeX table
-    caption = generate_latex_caption()
+    caption = escape_latex(AGGREGATE_TABLE_CAPTION, is_text=True)
     
     latex_content = f"""% Requires: \\usepackage{{makecell}}
 \\begin{{table*}}[htbp]

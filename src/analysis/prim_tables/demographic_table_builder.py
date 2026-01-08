@@ -49,17 +49,17 @@ def compute_cohens_d_fixed(
 
 
 def format_pvalue(p: float) -> str:
-    """Formatta p-value con notazione scientifica se < 0.001"""
     if pd.isna(p):
-        return "n/a"
-    if p == 0.0 or p < 1e-300:
-        return "<1e-300"
+        return "—"  # Em dash for missing values (better than "n/a")
+    # Extremely small p-values: report threshold to avoid false precision
+    # These indicate very strong evidence regardless of exact magnitude
     if p < 0.001:
-        return f"{p:.2e}"
+        return "< 0.001"
+    # Standard reporting for moderate p-values
     elif p < 0.01:
-        return f"{p:.4f}"
+        return f"{p:.3f}"  # Three decimals for precision
     else:
-        return f"{p:.3f}"
+        return f"{p:.2f}"  # Two decimals for larger values
 
 
 def build_demographic_table(csv_path: Path, summary_csv_path: Path, raw_csv_path: Path) -> pd.DataFrame:
