@@ -3,7 +3,7 @@ Render aggregate metrics table in Markdown format.
 """
 from pathlib import Path
 import pandas as pd
-from ._utils.demographic_table_config import AGGREGATE_TABLE_CAPTION
+from ._utils.tables_config import AGGREGATE_TABLE_CAPTION
 
 
 def format_percentage(value: float) -> str:

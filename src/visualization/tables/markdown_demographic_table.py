@@ -1,5 +1,5 @@
 from pathlib import Path
-from ._utils.demographic_table_config import DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION
+from ._utils.tables_config import DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION
 
 def render_markdown_table(df, output_path: Path):
     df_out = df.rename(columns=DEMOGRAPHIC_TABLE_COLUMNS)

@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-from ._utils.demographic_table_config import (DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION)
+from ._utils.tables_config import (DEMOGRAPHIC_TABLE_COLUMNS, DEMOGRAPHIC_TABLE_ORDER, DEMOGRAPHIC_TABLE_CAPTION)
 from ._utils.latex import escape_latex
 
 def wrap_header(text: str) -> str:
