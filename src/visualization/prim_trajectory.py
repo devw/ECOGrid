@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 from src.utils.cli_parser import base_parser, safe_run
-from ._utils.file_utils import load_csv_or_fail
+from src.utils.file_utils import load_csv_or_fail
 from src.utils.plot_style import (
     SCENARIO_COLORS, ERRORBAR_STYLE, SELECTED_BOX_STYLE, ANNOTATION_STYLE
 )
