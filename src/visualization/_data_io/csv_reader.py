@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import pandas as pd
 from .._config.settings import HEATMAP_FILE, PRIM_BOXES_FILE, METADATA_FILE, DATA_DIR
-from .._utils.file_utils import ensure_file_or_fallback
+from src.utils.file_utils import ensure_file_or_fallback
 
 def load_csv(file_name: str, data_dir: Path = DATA_DIR) -> pd.DataFrame:
     """
