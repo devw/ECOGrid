@@ -14,11 +14,12 @@ python -m src.visualization.<script_name>
 
 ## 🛠️ Available Scripts
 
-| Script                          | Description                                                       | Output                    |
-| :------------------------------ | :---------------------------------------------------------------- | :------------------------ |
-| `adoption_heatmap_generator.py` | Heatmaps of adoption rate vs Trust and Income for each scenario.  | PNG saved in `/tmp/`      |
-| `prim_trajectory.py`            | PRIM peeling trajectory (coverage vs density) for scenarios.      | PNG saved in `/tmp/`      |
-| `demographic_table.py`          | Markdown table of demographic profiles of high-adoption segments. | Markdown saved in `/tmp/` |
+| Script                             | Description                                                                 | Output                    |
+| :--------------------------------- | :-------------------------------------------------------------------------- | :------------------------ |
+| `adoption_heatmap_generator.py`    | Heatmaps of adoption rate vs Trust and Income for each scenario.           | PNG saved in `/tmp/`      |
+| `prim_trajectory.py`               | PRIM peeling trajectories (coverage vs density) for NI, EI, and SI.        | PNG saved in `/tmp/`      |
+| `plot_prim_single_trajectory.py`   | Single-scenario PRIM peeling trajectory with optimal box highlighted.      | PNG saved in `/tmp/`      |
+| `demographic_table.py`             | Markdown table of demographic profiles of high-adoption segments.          | Markdown saved in `/tmp/` |
 
 ---
 
@@ -34,6 +35,7 @@ python -m src.visualization.adoption_heatmap_generator --data-dir data/montecarl
 
 ```bash
 python -m src.visualization.prim_trajectory --data-dir data/montecarlo --output /tmp/prim_trajectory.png
+python -m src.visualization.plot_prim_single_trajectory --data-dir data/montecarlo --output /tmp/prim_trajectory.png
 ```
 
 ### 📝 Demographic Table
