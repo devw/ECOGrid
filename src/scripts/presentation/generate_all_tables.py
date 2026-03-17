@@ -9,7 +9,7 @@ Usage:
 from pathlib import Path
 import sys
 
-from src.analysis.prim_tables.demographic_table_builder import build_demographic_table
+from src.analysis.prim_tables.demographic_table_builder import build_demographic_table_method_B, build_demographic_table_method_A
 from src.analysis.prim_tables.aggregate_metrics_builder import build_aggregate_metrics_table
 from src.visualization.tables.latex_demographic_table import render_latex_table
 from src.visualization.tables.markdown_demographic_table import render_markdown_table
@@ -19,25 +19,34 @@ from src.utils.cli_parser import base_parser, safe_run
 
 
 def generate_demographic_tables(data_dir: Path, output_dir: Path) -> None:
-    """Generate demographic profile tables (existing functionality)."""
     print("📊 Generating demographic profile tables...")
-    
+
     csv_path = data_dir / "demographic_profiles.csv"
-    summary_csv_path = data_dir / "prim_trajectory_summary.csv"
     raw_csv_path = data_dir / "prim_trajectory_raw.csv"
 
-    # Build DataFrame
-    df = build_demographic_table(csv_path, summary_csv_path, raw_csv_path)
+    # Metodo B
+    summary_csv_path = data_dir / "prim_trajectory_summary.csv"
+    print(f"ℹ️ Generating PRIM table with Method B (per-replica aggregation)")
+    df_B = build_demographic_table_method_B(csv_path, summary_csv_path, raw_csv_path)
 
-    # Render outputs
-    tex_path = output_dir / "demographic_profiles.tex"
-    md_path = output_dir / "demographic_profiles.md"
-    
-    render_latex_table(df, tex_path)
-    render_markdown_table(df, md_path)
-    
-    print(f"  ✅ {tex_path.absolute()}")
-    print(f"  ✅ {md_path.absolute()}")
+    tex_path_B = output_dir / "demographic_profiles_methodB.tex"
+    md_path_B = output_dir / "demographic_profiles_methodB.md"
+    render_latex_table(df_B, tex_path_B)
+    render_markdown_table(df_B, md_path_B)
+    print(f"  ✅ {tex_path_B.absolute()}")
+    print(f"  ✅ {md_path_B.absolute()}")
+
+    # Metodo A
+    single_csv_path = data_dir / "prim_single_trajectory.csv"
+    print(f"\nℹ️ Generating PRIM table with Method A (single aggregated run)")
+    df_A = build_demographic_table_method_A(csv_path, single_csv_path)
+
+    tex_path_A = output_dir / "demographic_profiles_methodA.tex"
+    md_path_A = output_dir / "demographic_profiles_methodA.md"
+    render_latex_table(df_A, tex_path_A)
+    render_markdown_table(df_A, md_path_A)
+    print(f"  ✅ {tex_path_A.absolute()}")
+    print(f"  ✅ {md_path_A.absolute()}")
 
 
 def generate_aggregate_metrics_tables(data_dir: Path, output_dir: Path) -> None:

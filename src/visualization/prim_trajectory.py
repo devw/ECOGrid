@@ -8,8 +8,14 @@ from src.utils.plot_style import (
     SCENARIO_COLORS, ERRORBAR_STYLE, SELECTED_BOX_STYLE, ANNOTATION_STYLE
 )
 
-def plot_prim_trajectory_summary(csv_path, output_path="/tmp/prim_trajectory.png"):
-    df = load_csv_or_fail(csv_path)
+
+def read_csv(csv_path: Path):
+    """Read the CSV file and return a DataFrame."""
+    return load_csv_or_fail(csv_path)
+
+
+def create_prim_plot(df, output_path: Path):
+    """Generate PRIM trajectory plot and save to file."""
     fig, ax = plt.subplots(figsize=(10, 7))
 
     for scenario in df["scenario"].unique():
@@ -49,11 +55,41 @@ def plot_prim_trajectory_summary(csv_path, output_path="/tmp/prim_trajectory.png
     ax.set_xlim(-0.03, 1.03)
     ax.set_ylim(-0.03, 1.03)
 
-    output_path = Path(output_path)
+    # Ensure output folder exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
     plt.savefig(output_path, dpi=450, bbox_inches="tight")
     plt.close()
-    print(f"✔ Saved: {output_path.resolve()}")
+    print(f"✔ Saved plot to: {output_path.resolve()}")
+
+def print_selected_boxes(df):
+    """
+    Print coverage and density values for the selected PRIM box
+    for each scenario.
+    """
+    print("\n=== SELECTED PRIM BOXES (RUN-LEVEL) ===\n")
+
+    for scenario in sorted(df["scenario"].unique()):
+        sub = df[(df["scenario"] == scenario) & (df["is_selected"])]
+
+        if sub.empty:
+            print(f"[{scenario}] No selected box found.")
+            continue
+
+        row = sub.iloc[0]
+
+        coverage = row["coverage_mean"]
+        density = row["density_mean"]
+        iteration = int(row["iteration"])
+        n_agents = row.get("n_agents_mean", None)
+
+        print(f"Scenario: {scenario}")
+        print(f"  Iteration: {iteration}")
+        print(f"  Coverage:  {coverage:.4f}")
+        print(f"  Density:   {density:.4f}")
+        if n_agents is not None:
+            print(f"  N agents (mean): {int(n_agents)}")
+        print()
 
 def main():
     args = base_parser(
@@ -63,8 +99,15 @@ def main():
         }
     ).parse_args()
 
-    csv = Path(args.data_dir) / "prim_trajectory_summary.csv"
-    plot_prim_trajectory_summary(csv, args.output)
+    csv_path = Path(args.data_dir) / "prim_trajectory_summary.csv"
+    df = read_csv(csv_path)
+
+    # 🔥 STEP 1: Print selected box statistics
+    print_selected_boxes(df)
+
+    # 🔥 STEP 2: Create plot
+    create_prim_plot(df, Path(args.output))
+
 
 if __name__ == "__main__":
     safe_run(main)
