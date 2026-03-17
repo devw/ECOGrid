@@ -62,7 +62,7 @@ def format_pvalue(p: float) -> str:
         return f"{p:.2f}"  # Two decimals for larger values
 
 
-def build_demographic_table(csv_path: Path, summary_csv_path: Path, raw_csv_path: Path) -> pd.DataFrame:
+def build_demographic_table_method_B(csv_path: Path, summary_csv_path: Path, raw_csv_path: Path) -> pd.DataFrame:
     """
     Costruisce il DataFrame finale con metriche per la tabella demografica.
     
@@ -159,3 +159,61 @@ def build_demographic_table(csv_path: Path, summary_csv_path: Path, raw_csv_path
         records.append(rec)
 
     return pd.DataFrame(records)
+
+def build_demographic_table_method_A(demographic_csv, prim_single_csv):
+    """
+    PRIM Method A (single aggregated trajectory).
+    Purely descriptive statistics.
+    Returns publication-ready dataframe.
+    """
+
+    df_agents = pd.read_csv(demographic_csv)
+    df_prim = pd.read_csv(prim_single_csv)
+
+    # ---- scenario-level weighted mean & std ----
+    scenario_stats = (
+        df_agents
+        .groupby("scenario")
+        .apply(lambda g: pd.Series({
+            "mean": np.average(g["density"], weights=g["n_agents_segment"]),
+            "std": np.sqrt(
+                np.average(
+                    (g["density"] - np.average(g["density"], weights=g["n_agents_segment"]))**2,
+                    weights=g["n_agents_segment"]
+                )
+            ),
+            "n_total": g["n_agents_segment"].sum()
+        }))
+        .reset_index()
+    )
+
+    # ---- selected PRIM box only ----
+    df = (
+        df_prim[df_prim["is_selected"] == True]
+        .merge(scenario_stats, on="scenario", how="left")
+        .assign(
+            Lift=lambda d: d["density"] / d["mean"],
+            **{
+                "Effect Size (d)": lambda d: (d["density"] - d["mean"]) / d["std"],
+                "n_segment": lambda d: (d["coverage"] * d["n_total"]).round().astype(int)
+            }
+        )
+        .loc[:, [
+            "scenario",
+            "coverage",
+            "density",
+            "Lift",
+            "Effect Size (d)",
+            "n_segment"
+        ]]
+        .rename(columns={
+            "scenario": "Scenario",
+            "coverage": "Coverage",
+            "density": "Density"
+        })
+        .sort_values("Scenario")
+        .reset_index(drop=True)
+    )
+
+    return df
+  

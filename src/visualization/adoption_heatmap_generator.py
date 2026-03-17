@@ -42,9 +42,9 @@ def print_analysis_report(grids: dict, scenarios: dict):
         
         # PRIM Box analysis
         if prim is not None:
-            print(f"\n  🎯 PRIM Box (High-Adoption Region):")
+            print(f"\n  🎯 PRIM Box (High-Adoption Region – Coverage & Recall):")
             print(f"     • Coverage:  {prim['coverage']:.1%} of population")
-            print(f"     • Density:   {prim['density']:.1%} of high-adoption cases")
+            print(f"     • Recall (high-adoption runs captured): {prim['density']:.1%}")
             print(f"     • Lift:      {prim['lift']:.2f}x above average")
             
             # Calculate estimated adoption in PRIM box
@@ -147,7 +147,7 @@ def plot_all(output: Path, data_dir: Path):
     legend_ax = fig.add_axes([0.10, LEGEND_Y_POS, 0.80, 0.01])
     legend_ax.axis('off')
     legend_ax.legend(
-        handles=[mpatches.Patch(facecolor='none', edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle='-', label='PRIM Box (High-Adoption Region)')],
+        handles=[mpatches.Patch(facecolor='none', edgecolor=PRIM_COLOR, linewidth=PRIM_WIDTH, linestyle='-', label='PRIM Box (High-Adoption Region – run-level)')],
         loc='center right',
         fontsize=FONTSIZE_TEXT_SMALL + 1,
         framealpha=0.8,

@@ -28,7 +28,7 @@ class HeatmapPlotter:
 
     @staticmethod
     def _prim_label(box: pd.Series) -> str:
-        return f"PRIM Box: Coverage={box['coverage']:.0%}, Density={box['density']:.0%}, Lift={box['lift']:.1f}"
+        return f"PRIM Box: Coverage={box['coverage']:.0%}, Recall (high-adoption runs)={box['density']:.0%}, Lift={box['lift']:.1f}"
 
     @staticmethod
     def _add_ci_overlay(ax: plt.Axes, trust: np.ndarray, income: np.ndarray, grid: dict, step: int):
